@@ -1,0 +1,5 @@
+{
+  "verbose": false,
+  "ignore": ["public/**", "tmp/**"],
+	"delay": 3000
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="description">
+	<meta name="author" content="author">
+	<title>Title</title>
+	<link rel="icon" href="favicon.ico">
+	<!-- bootstrap minified CSS -->
+	<link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap@next/dist/css/bootstrap.min.css" />
+	<link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css" />
+	<!-- fonts -->
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Roboto:300" rel="stylesheet">
+</head>
+
+<body>
+	<div id='app'>
+		<b-navbar toggleable type="inverse" variant="success">
+
+			<b-nav-toggle target="nav_collapse"></b-nav-toggle>
+
+			<b-link class="navbar-brand" to="#">
+				<span><h1>AppTitle</h1></span>
+			</b-link>
+
+			<b-collapse is-nav id="nav_collapse">
+
+				<b-nav is-nav-bar>
+					<b-nav-item>Support</b-nav-item>
+					<b-nav-item>Docs</b-nav-item>
+					<b-nav-item>Contact Us</b-nav-item>
+				</b-nav>
+
+				<b-nav is-nav-bar class="ml-auto">
+
+					<!-- Navbar dropdowns -->
+					<b-nav-item-dropdown text="Settings" right>
+						<b-dropdown-item to="#">A</b-dropdown-item>
+						<b-dropdown-item to="#">B</b-dropdown-item>
+						<b-dropdown-item to="#">C</b-dropdown-item>
+						<b-dropdown-item to="#">D</b-dropdown-item>
+					</b-nav-item-dropdown>
+
+					<b-nav-item-dropdown right>
+
+						<!-- Using text slot -->
+						<template slot="text">
+							<span style="font-weight: bold;">User</span>
+						</template>
+
+						<b-dropdown-item to="#">Profile</b-dropdown-item>
+						<b-dropdown-item to="#">Signout</b-dropdown-item>
+					</b-nav-item-dropdown>
+
+				</b-nav>
+			</b-collapse>
+		</b-navbar>
+		<div id='non-navbar'>
+			<h2>PageTitle</h2>
+
+			<div id='cardfeed'>
+				<!-- Simple -->
+				<b-card class="mb-2" variant="success">Simple Card
+					<br></br>
+					<b-button>Button</b-button>
+				</b-card>
+
+				<!-- Standard -->
+				<b-card header="Card header text" class="mb-2" title="Card title" sub-title="Card subtitle" show-footer>
+					<small slot="footer" class="text-muted">
+            Last updated 3 mins ago
+        </small>
+				</b-card>
+
+				<!-- With image -->
+				<b-card img="/lib/placeholder-skull.svg" title="Skulls are nice" class="mb-2">
+					This is my opinion :)
+				</b-card>
+
+				<!-- Overlay image -->
+				<b-card overlay img="/lib/placeholder-skull.svg" class="mb-2">
+					Overlay cards are cute!
+				</b-card>
+			</div>
+		</div>
+	</div>
+
+	<!-- Vue.js + bootstrap-vue(doesn't require jquery+bootstrap) -->
+	<!-- cdn.js is CONSIDERABLY FASTER than unpkg -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.3.0/vue.min.js"></script>
+	<script async src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.23.0/polyfill.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
+	<script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+	<!-- socket.io client-side -->
+	<script src='lib/socket.io.min.js'></script>
+	<script src='lib/zepto.min.js'></script>
+	<!-- custom js -->
+	<script src='index.js'></script>
+</body>
+
+</html>
+
+<style>
+	body {
+		background: #eef2f3;
+		/* fallback for old browsers */
+		/*background: -webkit-linear-gradient(to bottom, #eef2f3, #cececb);*/
+		/* Chrome 10-25, Safari 5.1-6 */
+		/*background: linear-gradient(to bottom, #eef2f3, #cececb);*/
+		/* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+		/*background: no-repeat center center fixed;*/
+		/*min-height: 100%;*/
+	}
+
+	#non-navbar {
+		padding-left: 2em;
+	}
+
+	#cardfeed {
+		width: 50%;
+	}
+
+	body {
+		font-family: 'Open Sans', sans-serif;
+		font-size: 16pt;
+		background-color: #eef2f3;
+		/*padding-left: 1em;*/
+	}
+	/*
+	input,
+	button {
+		font-family: 'Roboto', sans-serif;
+		font-size: 16pt;
+	}
+
+	button,
+	input {
+		border-width: 4pt solid;
+		border-color: #000000;
+		border-radius: .2em;
+		background-color: inherit;
+	}
+
+	button:active {
+		border-radius: 2em;
+	}
+
+	button:hover {
+		border-color: blue;
+	}
+	*/
+</style>

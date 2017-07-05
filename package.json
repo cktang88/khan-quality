@@ -1,0 +1,31 @@
+{
+  "name": "express-boilerplate",
+  "version": "1.2.0",
+  "description": "A fast, simple express web app boilerplate project.",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js --ignore public/**",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --fix **/*.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.17.2",
+    "bunyan": "^1.8.10",
+    "cors": "^2.8.3",
+    "express": "^4.15.3",
+    "helmet": "^3.6.1",
+    "monk": "^6.0.1",
+    "nodemon": "^1.11.0",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "socket.io": "^2.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.6.0"
+  }
+}
