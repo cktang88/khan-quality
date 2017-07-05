@@ -20,11 +20,13 @@ const server = require('http').Server(app);
 const version = `Express-Boilerplate v${require('./package.json').version}`;
 
 // start server
+/*
 server.listen(port, () => {
   log.info(version);
   log.info(`Listening on port ${port}`);
 });
-
+*/
+/*
 const processWord = (word, socket) => {
   if (!socket) {
     log.error('Socket is undefined.');
@@ -75,27 +77,65 @@ app.post('/api/users', jsonParser, (req, res) => {
   // create user in req.body
 });
 
+*/
 
+// the entire topic tree is 30mb :(
+
+const rp = require('request-promise');
+const go = res => {
+    //console.log(res.children);
+    res.children.forEach((entry, index) => {
+      const val = String(entry.node_slug);
+
+      if (val.indexOf('/') > -1) {
+        // eg. "e/..." or "a/..." or "v/..."
+        // these signify leaf of tree branch, is not a topic with children
+        console.log(val);
+      } else {
+        console.log('> ' + val);
+        //getTopic(val);
+      }
+    });
+  }
+// breadth-first search of tree
+const getTopic = topic => {
+  const options = {
+    uri: 'http://www.khanacademy.org/api/v1/topic/' + topic,
+    headers: {
+      // spoof user-agent
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+    },
+    json: true // Automatically parses the JSON string in the response
+  };
+  // ex. using 'request-promise' to call JSON REST API
+  rp(options)
+    .then(data => {
+      console.log('got data')
+      go(data);
+    })
+    .catch(err => {
+      console.log(err);
+      // API call failed...
+    });
+}
+
+getTopic('cells');
+
+
+// TODO:
 /*
-// ex. using 'request-promise' to call JSON REST API
-var rp = require('request-promise');
-var options = {
-  uri: 'https://api.github.com/user/repos',
-  qs: {
-    access_token: 'xxxxx xxxxx' // -> uri + '?access_token=xxxxx%20xxxxx'
-  },
-  headers: {
-    // spoof user-agent
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
-  },
-  json: true // Automatically parses the JSON string in the response
-};
 
-rp(options)
-  .then(function (data) {
-    console.log('User has %d repos', repos.length);
-  })
-  .catch(function (err) {
-    // API call failed...
-  });
-  */
+Youtube API:
+1. get all playlists of username (khanacademy)
+2. for each video, get title, comments?, upvotes, downvotes, # views
+
+Khan Academy API:
+
+can access specific videos, get Youtube URL from here
+can access topictree, playlists, etc.
+
+*/
+
+// ewww disgusting --> convert all to es6 please
+// narrowed down to root=mcat to just prove point
+//get topic="mcat"
