@@ -1,7 +1,7 @@
 {
-  "name": "express-boilerplate",
+  "name": "khan-quality",
   "version": "1.2.0",
-  "description": "A fast, simple express web app boilerplate project.",
+  "description": "An app to find videos that need attention in Khan Academy",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js --ignore public/**",

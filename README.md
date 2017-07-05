@@ -1,34 +1,12 @@
+# Khan-Quality
 
-# Express-Boilerplate
+An app to find videos that need attention in Khan Academy.
 
-A fast :fast_forward:, simple **Node.js/Express** + **MongoDB** + **Vue.js** web app boilerplate project. This template provides a set of best-practice setups and avoids common mistakes. Hopefully useful for hackathons... :pray: :zap: 
+## Motivation
 
-## Quickstart
+When using Khan Academy one day, I found several videos had low resolution, suboptimal sound quality, or many similar critical comments in "Tips & Thanks" that were unanswered. This correlated with videos that needed updating. I decided to make this to hopefully find all such videos automatically and highlight them.
 
-```
-$ git clone https://github.com/cktang88/express-boilerplate
-$ cd express-boilerplate
-$ npm i --dev
-$ npm start
-```
-Then go visit http://localhost:8000
-
-## Batteries included.
-
-### Back-end
-* [x] **[Express](https://github.com/expressjs/express)** - Fast, unopinionated, minimalist web framework for Node.js
-* [x] [Nodemon](https://nodemon.io/) - Automatic server reload.
-* [x] [CORS](https://github.com/expressjs/cors) - Cross-origin resource sharing (CORS) middleware.
-* [x] [Helmet.js](https://helmetjs.github.io/) - Security with HTTP headers.
-* [x] [Request-promise](https://github.com/request/request-promise) - Simple HTTP requests, with modern ES6 promises.
-* [x] [Bunyan](https://github.com/trentm/node-bunyan) - Easy JSON logging.
-* [x] [Monk](https://github.com/Automattic/monk) - Tiny useful layer over **[MongoDB](https://github.com/mongodb/node-mongodb-native)**.
-### Front-end
-* [x] **[Vue.js](https://vuejs.org/)**
-* [x] [Bootstrap-Vue](https://github.com/bootstrap-vue/bootstrap-vue) - port of Bootstrap to Vue.js
-### Extra
-* [x] [Socket.io](https://socket.io/) - Simple client-server communication
-* [x] [Eslint](http://eslint.org/) - Javascript linting
+Note: I highly admire Khan Academy, and this app is made to be helpful, not critical.
 
 
 ## Dev
