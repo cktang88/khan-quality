@@ -4,6 +4,8 @@ const Promise = require('bluebird');
 
 // custom logger
 const log = require('./logger.js');
+// custom db manager
+// const db = require('./dbManager.js')(log);
 
 const express = require('express');
 
@@ -81,22 +83,31 @@ app.post('/api/users', jsonParser, (req, res) => {
 
 // the entire topic tree is 30mb :(
 
-const rp = require('request-promise');
-const go = res => {
-    //console.log(res.children);
-    res.children.forEach((entry, index) => {
-      const val = String(entry.node_slug);
 
-      if (val.indexOf('/') > -1) {
-        // eg. "e/..." or "a/..." or "v/..."
-        // these signify leaf of tree branch, is not a topic with children
-        console.log(val);
-      } else {
-        console.log('> ' + val);
-        //getTopic(val);
+const rp = require('request-promise');
+
+// breadth-first search
+// these two functions actually represent a RECURSIVE PROMISE
+// processes data, returns array of strings
+  return Promise.all(res.children.map((entry, index) => {
+    const val = String(entry.node_slug);
+    if (val.indexOf('/') > -1) {
+      // eg. "e/..." or "a/..." or "v/..."
+      // these signify leaf of tree branch, is not a topic with children
+      // a = article, e = excercise, v = video
+      log.info(val);
+      const tmp = val.split('/');
+      if (tmp[0] === 'v') {
+        // do something with this...
+        return tmp[1];
       }
-    });
-  }
+    } else {
+      log.info('> ' + val);
+      return getTopic(val);
+    }
+  }));
+}
+
 // breadth-first search of tree
 const getTopic = topic => {
   const options = {
@@ -108,18 +119,28 @@ const getTopic = topic => {
     json: true // Automatically parses the JSON string in the response
   };
   // ex. using 'request-promise' to call JSON REST API
-  rp(options)
+  return rp(options)
     .then(data => {
-      console.log('got data')
-      go(data);
+      log.info(`Got data for ${topic}`)
+    })
+    .then(arr => {
+      log.info(arr);
+      return arr;
     })
     .catch(err => {
-      console.log(err);
       // API call failed...
+      log.info(err);
     });
 }
-
+//start off with a root
 getTopic('cells');
+
+// for a given video (eg. cell-membrane-introduction), to find Youtube ID:
+// GET http://www.khanacademy.org/api/v1/videos/ + 'cell-membrane-introduction'
+// .translated_youtube_id: QpcACa39YtA
+
+// then use https://developers.google.com/youtube/v3/docs/videos to get data like upvotes/downvotes/comments/etc.
+// need snippet, contentDetails, statistics
 
 
 // TODO:
