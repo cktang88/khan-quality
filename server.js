@@ -89,7 +89,9 @@ const rp = require('request-promise');
 // breadth-first search
 // these two functions actually represent a RECURSIVE PROMISE
 // processes data, returns array of strings
-  return Promise.all(res.children.map((entry, index) => {
+const processData = rawdata => {
+  // returns array of fulfillment values when all completed (fulfilled/rejected)
+  return Promise.all(rawdata.children.map((entry, index) => {
     const val = String(entry.node_slug);
     if (val.indexOf('/') > -1) {
       // eg. "e/..." or "a/..." or "v/..."
@@ -98,7 +100,7 @@ const rp = require('request-promise');
       log.info(val);
       const tmp = val.split('/');
       if (tmp[0] === 'v') {
-        // do something with this...
+        // only output videos to array
         return tmp[1];
       }
     } else {
@@ -118,14 +120,11 @@ const getTopic = topic => {
     },
     json: true // Automatically parses the JSON string in the response
   };
-  // ex. using 'request-promise' to call JSON REST API
+  // using 'request-promise' to call JSON REST API
   return rp(options)
-    .then(data => {
+    .then(rawdata => {
       log.info(`Got data for ${topic}`)
-    })
-    .then(arr => {
-      log.info(arr);
-      return arr;
+      return processData(rawdata);
     })
     .catch(err => {
       // API call failed...
@@ -133,7 +132,10 @@ const getTopic = topic => {
     });
 }
 //start off with a root
-getTopic('cells');
+getTopic('cells').then(results => {
+  // aggregated results, in the form of jagged(nested) array
+  log.info(results);
+});
 
 // for a given video (eg. cell-membrane-introduction), to find Youtube ID:
 // GET http://www.khanacademy.org/api/v1/videos/ + 'cell-membrane-introduction'
