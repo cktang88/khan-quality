@@ -89,9 +89,10 @@ const rp = require('request-promise');
 // breadth-first search
 // these two functions actually represent a RECURSIVE PROMISE
 // processes data, returns array of strings
-const processData = rawdata => {
+const processData = rawdata =>
   // returns array of fulfillment values when all completed (fulfilled/rejected)
-  return Promise.all(rawdata.children.map((entry, index) => {
+  // Promise.map = Promise.all(arr.map)
+  Promise.map(rawdata.children, (entry, index) => {
     const val = String(entry.node_slug);
     if (val.indexOf('/') > -1) {
       // eg. "e/..." or "a/..." or "v/..."
@@ -104,35 +105,36 @@ const processData = rawdata => {
         return tmp[1];
       }
     } else {
-      log.info('> ' + val);
+      log.info(`> ${val}`);
       return getTopic(val);
     }
-  }));
-}
+    // default
+    return undefined;
+  }).filter(item => item !== undefined);
 
 // breadth-first search of tree
-const getTopic = topic => {
+const getTopic = (topic) => {
   const options = {
-    uri: 'http://www.khanacademy.org/api/v1/topic/' + topic,
+    uri: `http://www.khanacademy.org/api/v1/topic/${topic}`,
     headers: {
       // spoof user-agent
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
     },
-    json: true // Automatically parses the JSON string in the response
+    json: true, // Automatically parses the JSON string in the response
   };
   // using 'request-promise' to call JSON REST API
   return rp(options)
-    .then(rawdata => {
-      log.info(`Got data for ${topic}`)
+    .then((rawdata) => {
+      log.info(`Got data for ${topic}`);
       return processData(rawdata);
     })
-    .catch(err => {
+    .catch((err) => {
       // API call failed...
       log.info(err);
     });
-}
-//start off with a root
-getTopic('cells').then(results => {
+};
+// start off with a root
+getTopic('cells').then((results) => {
   // aggregated results, in the form of jagged(nested) array
   log.info(results);
 });
@@ -161,4 +163,4 @@ can access topictree, playlists, etc.
 
 // ewww disgusting --> convert all to es6 please
 // narrowed down to root=mcat to just prove point
-//get topic="mcat"
+// get topic="mcat"
