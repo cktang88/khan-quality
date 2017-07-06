@@ -1,7 +1,6 @@
 'use strict';
 
 const Promise = require('bluebird');
-
 // custom logger
 const log = require('./logger.js');
 // custom db manager
@@ -106,14 +105,14 @@ const processData = rawdata =>
       }
     } else {
       log.info(`> ${val}`);
-      return getTopic(val);
+      return getTopicTree(val);
     }
     // default
     return undefined;
   }).filter(item => item !== undefined);
 
-// breadth-first search of tree
-const getTopic = (topic) => {
+// breadth-first search of subtree starting from a specified root topic
+const getTopicTree = (topic) => {
   const options = {
     uri: `http://www.khanacademy.org/api/v1/topic/${topic}`,
     headers: {
@@ -133,10 +132,42 @@ const getTopic = (topic) => {
       log.info(err);
     });
 };
+
+// TODO: eventually convert to streams to reduce memory usage
+
+// promisify IO functions, removing callbacks
+const writeFile = Promise.promisify(require('fs').writeFile);
+const readFile = Promise.promisify(require('fs').readFile);
+
+// main runner
 // start off with a root
-getTopic('cells').then((results) => {
-  // aggregated results, in the form of jagged(nested) array
-  log.info(results);
+
+// 1. get topics (if doesn't exist) -- basic caching
+const topicsFilePath = './data/topics.json';
+const stat = Promise.promisify(require('fs').stat);
+
+// check if file exists
+const getTopics = () => stat(topicsFilePath)
+  // if file exists, get from file
+  .then(result => readFile(topicsFilePath).then((contents) => {
+    log.info('Loaded topics from file.');
+    return JSON.parse(contents);
+  }))
+  .catch(err =>
+    // if file doesn't exist (assume not corrupted), then get from API
+    getTopicTree('cells').then((results) => {
+      // aggregated results, in the form of jagged(nested) array
+      // log.info(results);
+      writeFile(topicsFilePath, JSON.stringify(results));
+      log.info('Written topics to file.');
+    }),
+  );
+
+getTopics().then((topics) => {
+  // 2. read from file
+  log.info(topics);
+}).catch((err) => {
+  log.info(err);
 });
 
 // for a given video (eg. cell-membrane-introduction), to find Youtube ID:
