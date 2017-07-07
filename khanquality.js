@@ -4,31 +4,16 @@ const KhanQuality = (logger) => {
   const Promise = require('bluebird');
   const log = logger;
 
-  // breadth-first search
-  // these two functions actually represent a RECURSIVE PROMISE
-  // processes data, returns array of strings
-  const processData = rawdata =>
-    // returns array of fulfillment values when all completed (fulfilled/rejected)
-    // Promise.map = Promise.all(arr.map)
-    Promise.map(rawdata.children, (entry, index) => {
-      const val = String(entry.node_slug);
-      if (val.indexOf('/') > -1) {
-        // eg. "e/..." or "a/..." or "v/..."
-        // these signify leaf of tree branch, is not a topic with children
-        // a = article, e = excercise, v = video
-        // log.info(val);
-        const tmp = val.split('/');
-        if (tmp[0] === 'v') {
-          // only output videos to array
-          return tmp[1];
-        }
-      } else {
-        log.info(`> ${val}`);
-        return getTopicTree(val);
-      }
-      // default
-      return undefined;
-    }).filter(item => item !== undefined);
+  // TODO: eventually convert to streams to reduce memory usage
+
+  // promisify IO functions, replacing callbacks
+  const writeFile = Promise.promisify(require('fs').writeFile);
+  const readFile = Promise.promisify(require('fs').readFile);
+  const stat = Promise.promisify(require('fs').stat);
+
+  const topicsFilePath = './data/topics.json';
+  // the entire topic tree is 30mb :(
+  const rootTopic = 'cells'; // start off with a root (proof of concept)
 
   const options = {
     headers: {
@@ -38,20 +23,6 @@ const KhanQuality = (logger) => {
     json: true, // Automatically parses the JSON string in the response
   };
 
-  // get topic tree from given root topic - Khan Academy API
-  const getTopicTree = (topic) => {
-    options.uri = `http://www.khanacademy.org/api/v1/topic/${topic}`; // add url param
-    // using 'request-promise' to call JSON REST API
-    return rp(options)
-      .then((rawdata) => {
-        log.info(`Got data for ${topic}`);
-        const data = processData(rawdata);
-        return data.reduce((a, b) => a.concat(b), []); // flatten any nested arrays as we go
-      })
-      .catch((err) => {
-        log.error(err);
-      });
-  };
   // get corresponding Youtube video ID of a topic - Khan Academy API
   const getYoutubeID = (topic) => {
     // check topic is valid string
@@ -70,16 +41,7 @@ const KhanQuality = (logger) => {
       });
   };
 
-  // TODO: eventually convert to streams to reduce memory usage
-
-  // promisify IO functions, replacing callbacks
-  const writeFile = Promise.promisify(require('fs').writeFile);
-  const readFile = Promise.promisify(require('fs').readFile);
-  const stat = Promise.promisify(require('fs').stat);
-
-  const topicsFilePath = './data/topics.json';
-  // the entire topic tree is 30mb :(
-  const rootTopic = 'cells'; // start off with a root (proof of concept)
+  const kaTopicTree = require('./ka-topic-tree.js')(log, false);
 
   /* basic caching */
   // fs.stat returns result if file exists, ENOENT error if file doesn't exist
@@ -91,7 +53,8 @@ const KhanQuality = (logger) => {
     }))
     .catch(err =>
       // if file doesn't exist (assume not corrupted), then get from API
-      getTopicTree(rootTopic).then((results) => {
+      kaTopicTree.getFromAPI('cells')
+      .then((results) => {
         // aggregated results, in the form of jagged(nested) array
         // log.info(results);
         writeFile(topicsFilePath, JSON.stringify(results)); // write to file
@@ -133,7 +96,8 @@ const KhanQuality = (logger) => {
       getYoutubeID(topic).then(yid => ({
         title: topic,
         youtubeid: yid,
-      })).then(obj => getVideoInfo(obj)),
+      }))
+      //.then(obj => getVideoInfo(obj)),
     ).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube video IDs to file.');
