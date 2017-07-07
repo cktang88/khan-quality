@@ -79,10 +79,6 @@ app.post('/api/users', jsonParser, (req, res) => {
 });
 
 */
-
-// the entire topic tree is 30mb :(
-
-
 const rp = require('request-promise');
 
 // breadth-first search
@@ -97,7 +93,7 @@ const processData = rawdata =>
       // eg. "e/..." or "a/..." or "v/..."
       // these signify leaf of tree branch, is not a topic with children
       // a = article, e = excercise, v = video
-      log.info(val);
+      // log.info(val);
       const tmp = val.split('/');
       if (tmp[0] === 'v') {
         // only output videos to array
@@ -112,6 +108,7 @@ const processData = rawdata =>
   }).filter(item => item !== undefined);
 
 // breadth-first search of subtree starting from a specified root topic
+// Khan Academy API
 const getTopicTree = (topic) => {
   const options = {
     uri: `http://www.khanacademy.org/api/v1/topic/${topic}`,
@@ -125,46 +122,46 @@ const getTopicTree = (topic) => {
   return rp(options)
     .then((rawdata) => {
       log.info(`Got data for ${topic}`);
-      return processData(rawdata);
+      const data = processData(rawdata);
+      return data.reduce((a, b) => a.concat(b), []); // flatten any nested arrays as we go
     })
     .catch((err) => {
-      // API call failed...
       log.info(err);
     });
 };
 
 // TODO: eventually convert to streams to reduce memory usage
 
-// promisify IO functions, removing callbacks
+// promisify IO functions, replacing callbacks
 const writeFile = Promise.promisify(require('fs').writeFile);
 const readFile = Promise.promisify(require('fs').readFile);
+const stat = Promise.promisify(require('fs').stat);
 
 // main runner
-// start off with a root
+// the entire topic tree is 30mb :(
+const rootTopic = 'cells'; // start off with a root (proof of concept)
 
 // 1. get topics (if doesn't exist) -- basic caching
 const topicsFilePath = './data/topics.json';
-const stat = Promise.promisify(require('fs').stat);
 
-// check if file exists
+// fs.stat returns result if file exists, ENOENT error if file doesn't exist
 const getTopics = () => stat(topicsFilePath)
-  // if file exists, get from file
+  // if file exists, read from file
   .then(result => readFile(topicsFilePath).then((contents) => {
     log.info('Loaded topics from file.');
     return JSON.parse(contents);
   }))
   .catch(err =>
     // if file doesn't exist (assume not corrupted), then get from API
-    getTopicTree('cells').then((results) => {
+    getTopicTree(rootTopic).then((results) => {
       // aggregated results, in the form of jagged(nested) array
       // log.info(results);
-      writeFile(topicsFilePath, JSON.stringify(results));
+      writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written topics to file.');
-    }),
+    })
   );
 
 getTopics().then((topics) => {
-  // 2. read from file
   log.info(topics);
 }).catch((err) => {
   log.info(err);
@@ -176,22 +173,4 @@ getTopics().then((topics) => {
 
 // then use https://developers.google.com/youtube/v3/docs/videos to get data like upvotes/downvotes/comments/etc.
 // need snippet, contentDetails, statistics
-
-
-// TODO:
-/*
-
-Youtube API:
-1. get all playlists of username (khanacademy)
-2. for each video, get title, comments?, upvotes, downvotes, # views
-
-Khan Academy API:
-
-can access specific videos, get Youtube URL from here
-can access topictree, playlists, etc.
-
-*/
-
-// ewww disgusting --> convert all to es6 please
-// narrowed down to root=mcat to just prove point
-// get topic="mcat"
+// date created?, date updated?
