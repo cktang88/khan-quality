@@ -2,8 +2,10 @@
   Custom wrapper over Bunyan to pretty-print to console, while logging full JSON to log files
   needed b/c Bunyan doesn't support it except for CLI/pipe
 
-  example usage: "const log = require('./logger.js); log.info('Log initiated.');"
+  Sample usage: "const log = require('./logger.js); log.info('Log initiated.');"
 */
+
+'use strict';
 
 const bunyan = require('bunyan');
 

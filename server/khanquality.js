@@ -1,3 +1,15 @@
+/*
+
+Main application-specific module.
+
+Usage: 
+const kq = require('./khanquality.js')(loggerInstance);
+kq.execute();
+
+*/
+
+'use strict';
+
 const KhanQuality = (logger) => {
   const rp = require('request-promise');
   const assert = require('assert'); // assert funcs don't work w/ promises, which never throw...
@@ -96,8 +108,8 @@ const KhanQuality = (logger) => {
       getYoutubeID(topic).then(yid => ({
         title: topic,
         youtubeid: yid,
-      }))
-      //.then(obj => getVideoInfo(obj)),
+      })),
+      // .then(obj => getVideoInfo(obj)),
     ).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube video IDs to file.');

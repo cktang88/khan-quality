@@ -1,4 +1,4 @@
-/* 
+/*
 Purpose: Get part of Khan Academy topic tree
 Parameters:
   logger - logger instance (only supports Bunyan logger)
@@ -15,6 +15,8 @@ Sample usage:
   });
 
 */
+
+'use strict';
 
 const kaTopicTree = (logger, nested) => {
   const rp = require('request-promise');

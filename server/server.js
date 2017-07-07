@@ -12,12 +12,12 @@ const app = express();
 app.use(require('helmet')()); // use helmet
 app.use(require('cors')()); // enable CORS
 // serves all static files in /public
-app.use(express.static(`${__dirname}/public`));
+app.use(express.static(`${__dirname}/../public`));
 const port = process.env.PORT || 8000;
 const server = require('http').Server(app);
 
 // boilerplate version
-const version = `Express-Boilerplate v${require('./package.json').version}`;
+const version = `Express-Boilerplate v${require('../package.json').version}`;
 
 // start server
 /*
