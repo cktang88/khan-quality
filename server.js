@@ -1,6 +1,6 @@
 'use strict';
 
-// custom logger
+// custom logger --> share one instance across all modules/files
 const log = require('./logger.js');
 // custom db manager
 // const db = require('./dbManager.js')(log);
@@ -79,6 +79,6 @@ app.post('/api/users', jsonParser, (req, res) => {
 
 */
 
+const KhanQuality = require('./khanquality.js')(log);
 
-const KhanQuality = new require('./khanquality.js')(log);
 KhanQuality.execute();
