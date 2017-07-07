@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('assert'); // assert funcs don't work w/ promises, which never throw...
 const Promise = require('bluebird');
 // custom logger
@@ -115,9 +116,9 @@ const options = {
   json: true, // Automatically parses the JSON string in the response
 };
 
-// Khan Academy API
+// get topic tree from given root topic - Khan Academy API
 const getTopicTree = (topic) => {
-  options.uri = `http://www.khanacademy.org/api/v1/topic/${topic}` // add url param
+  options.uri = `http://www.khanacademy.org/api/v1/topic/${topic}`; // add url param
   // using 'request-promise' to call JSON REST API
   return rp(options)
     .then((rawdata) => {
@@ -129,16 +130,19 @@ const getTopicTree = (topic) => {
       log.error(err);
     });
 };
-const getYoutubeID = topic => {
+// get corresponding Youtube video ID of a topic - Khan Academy API
+const getYoutubeID = (topic) => {
+  // check topic is valid string
+  if (topic === null && topic === undefined) { return Promise.reject('Improper topic'); }
+  if (typeof topic !== 'string') { return Promise.reject('Topic is not a string.'); }
+
   options.uri = `http://www.khanacademy.org/api/v1/videos/${topic}`;
   return rp(options)
-    .then(rawdata => {
-      return rawdata.translated_youtube_id;
-    })
+    .then(rawdata => rawdata.translated_youtube_id)
     .catch((err) => {
       log.error(err);
     });
-}
+};
 
 // TODO: eventually convert to streams to reduce memory usage
 
@@ -147,11 +151,11 @@ const writeFile = Promise.promisify(require('fs').writeFile);
 const readFile = Promise.promisify(require('fs').readFile);
 const stat = Promise.promisify(require('fs').stat);
 
-// 1. get topics (if doesn't exist) -- basic caching
 const topicsFilePath = './data/topics.json';
 // the entire topic tree is 30mb :(
 const rootTopic = 'cells'; // start off with a root (proof of concept)
 
+/* basic caching */
 // fs.stat returns result if file exists, ENOENT error if file doesn't exist
 const getTopics = () => stat(topicsFilePath)
   // if file exists, read from file
@@ -167,37 +171,28 @@ const getTopics = () => stat(topicsFilePath)
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written topics to file.');
       return results;
-    })
+    }),
   );
 
 
 // main runner
+// 1. get topics
 getTopics().then((topics) => {
-  if (topics === null && topics === undefined)
-    return Promise.reject('No topics.');
+  if (topics === null && topics === undefined) { return Promise.reject('No topics.'); }
   log.info(`${topics.length} topics.`);
   return topics;
-}).map(topic => {
-  if (topic === null && topic === undefined)
-    return Promise.reject('bad topic');
-  if (typeof topic !== "string")
-    return Promise.reject('topic is not a string.');
-  return getYoutubeID(topic).then((yid) => {
-    return {
-      title: topic,
-      youtubeid: yid
-    };
-  });
-}).then(results => {
+}).map(topic =>
+  // 2. get Youtube video ID of each video
+  getYoutubeID(topic).then(yid => ({
+    title: topic,
+    youtubeid: yid,
+  })),
+).then((results) => {
   writeFile(topicsFilePath, JSON.stringify(results)); // write to file
   log.info('Written Youtube video IDs to file.');
 }).catch((err) => {
   log.error(err);
 });
-
-// for a given video (eg. cell-membrane-introduction), to find Youtube ID:
-// GET http://www.khanacademy.org/api/v1/videos/ + 'cell-membrane-introduction'
-// .translated_youtube_id: QpcACa39YtA
 
 // then use https://developers.google.com/youtube/v3/docs/videos to get data like upvotes/downvotes/comments/etc.
 // need snippet, contentDetails, statistics
