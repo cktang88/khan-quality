@@ -1,5 +1,5 @@
 {
   "verbose": false,
-  "ignore": ["public/**", "tmp/**", "./data/**", "logs/**"],
+  "ignore": ["public/**", "tmp/**", "data/**", "logs/**"],
 	"delay": 3000
 }
