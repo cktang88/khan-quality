@@ -1,5 +1,5 @@
 'use strict';
-
+const assert = require('assert'); // assert funcs don't work w/ promises, which never throw...
 const Promise = require('bluebird');
 // custom logger
 const log = require('./logger.js');
@@ -107,17 +107,17 @@ const processData = rawdata =>
     return undefined;
   }).filter(item => item !== undefined);
 
-// breadth-first search of subtree starting from a specified root topic
+const options = {
+  headers: {
+    // spoof user-agent
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+  },
+  json: true, // Automatically parses the JSON string in the response
+};
+
 // Khan Academy API
 const getTopicTree = (topic) => {
-  const options = {
-    uri: `http://www.khanacademy.org/api/v1/topic/${topic}`,
-    headers: {
-      // spoof user-agent
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
-    },
-    json: true, // Automatically parses the JSON string in the response
-  };
+  options.uri = `http://www.khanacademy.org/api/v1/topic/${topic}` // add url param
   // using 'request-promise' to call JSON REST API
   return rp(options)
     .then((rawdata) => {
@@ -126,9 +126,19 @@ const getTopicTree = (topic) => {
       return data.reduce((a, b) => a.concat(b), []); // flatten any nested arrays as we go
     })
     .catch((err) => {
-      log.info(err);
+      log.error(err);
     });
 };
+const getYoutubeID = topic => {
+  options.uri = `http://www.khanacademy.org/api/v1/videos/${topic}`;
+  return rp(options)
+    .then(rawdata => {
+      return rawdata.translated_youtube_id;
+    })
+    .catch((err) => {
+      log.error(err);
+    });
+}
 
 // TODO: eventually convert to streams to reduce memory usage
 
@@ -137,12 +147,10 @@ const writeFile = Promise.promisify(require('fs').writeFile);
 const readFile = Promise.promisify(require('fs').readFile);
 const stat = Promise.promisify(require('fs').stat);
 
-// main runner
-// the entire topic tree is 30mb :(
-const rootTopic = 'cells'; // start off with a root (proof of concept)
-
 // 1. get topics (if doesn't exist) -- basic caching
 const topicsFilePath = './data/topics.json';
+// the entire topic tree is 30mb :(
+const rootTopic = 'cells'; // start off with a root (proof of concept)
 
 // fs.stat returns result if file exists, ENOENT error if file doesn't exist
 const getTopics = () => stat(topicsFilePath)
@@ -158,13 +166,33 @@ const getTopics = () => stat(topicsFilePath)
       // log.info(results);
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written topics to file.');
+      return results;
     })
   );
 
+
+// main runner
 getTopics().then((topics) => {
-  log.info(topics);
+  if (topics === null && topics === undefined)
+    return Promise.reject('No topics.');
+  log.info(`${topics.length} topics.`);
+  return topics;
+}).map(topic => {
+  if (topic === null && topic === undefined)
+    return Promise.reject('bad topic');
+  if (typeof topic !== "string")
+    return Promise.reject('topic is not a string.');
+  return getYoutubeID(topic).then((yid) => {
+    return {
+      title: topic,
+      youtubeid: yid
+    };
+  });
+}).then(results => {
+  writeFile(topicsFilePath, JSON.stringify(results)); // write to file
+  log.info('Written Youtube video IDs to file.');
 }).catch((err) => {
-  log.info(err);
+  log.error(err);
 });
 
 // for a given video (eg. cell-membrane-introduction), to find Youtube ID:
