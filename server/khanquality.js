@@ -33,7 +33,7 @@ const KhanQuality = (logger) => {
 
   /* basic caching */
   // fs.stat returns result if file exists, ENOENT error if file doesn't exist
-  const getTopics = (rootTopic) => stat(topicsFilePath)
+  const getTopics = rootTopic => stat(topicsFilePath)
     // if file exists, read from file
     .then(result => readFile(topicsFilePath).then((contents) => {
       log.info('Loaded topics from file.');
@@ -44,7 +44,7 @@ const KhanQuality = (logger) => {
       kaTopicTree.getFromAPI(rootTopic)
       // convert each topic to an obj
       .map(topicTitle => ({
-        title: topicTitle
+        title: topicTitle,
       }))
       .then((results) => {
         // aggregated results, in the form of jagged(nested) array
@@ -62,8 +62,7 @@ const KhanQuality = (logger) => {
       return Promise.reject('Improper topic');
     }
     // shortcut if already have youtube id
-    if (obj.youtubeid)
-      return Promise.resolve(obj.youtubeid);
+    if (obj.youtubeid) { return Promise.resolve(obj.youtubeid); }
 
     const title = obj.title;
     options.uri = `http://www.khanacademy.org/api/v1/videos/${title}`;
@@ -76,15 +75,13 @@ const KhanQuality = (logger) => {
 
   // get Youtube video detailed info from Youtube API
   const getVideoInfo = (obj) => {
-    // shortcut if already have video info
-    if (obj.videoInfo)
-      return Promise.resolve(obj.videoInfo);
-
     // check youtube video id valid
     const yid = obj.youtubeid;
     if (yid === null || yid === undefined || typeof yid !== 'string') {
       return Promise.reject('Youtube ID does not exist.');
     }
+    // shortcut if already have video info
+    if (obj.videoInfo) { return Promise.resolve(obj.videoInfo); }
 
     const baseurl = 'https://www.googleapis.com/youtube/v3/videos';
     const key = process.env.kq_youtube_key;
@@ -95,8 +92,7 @@ const KhanQuality = (logger) => {
     return rp(options)
       .then((rawdata) => {
         // log.info(obj);
-        if (!rawdata || rawdata.length == '')
-          return Promise.reject('Could not get data from url.');
+        if (!rawdata || rawdata.length == '') { return Promise.reject('Could not get data from url.'); }
 
         // remove unnecessary data to reduce file size & process memory usage
         // approx. 75% reduction (tested: 280kb -> 67kb)
@@ -105,9 +101,9 @@ const KhanQuality = (logger) => {
           return rawdata;
         }
         const snip = rawdata.items[0].snippet;
-        snip.description = "omitted";
-        snip.thumbnails = "omitted";
-        snip.localized.description = "omitted";
+        snip.description = 'omitted';
+        snip.thumbnails = 'omitted';
+        snip.localized.description = 'omitted';
         return rawdata;
       })
       .catch((err) => {
@@ -122,28 +118,28 @@ const KhanQuality = (logger) => {
       log.info(`${topics.length} topics.`);
     }).map(obj =>
       // 2. get Youtube video ID of each video if needed (is slowest step)
-      getYoutubeID(obj).then(yid => {
+      getYoutubeID(obj).then((yid) => {
         obj.youtubeid = yid;
         return obj;
       })
       // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
       , {
-        concurrency: 20
-      }
+        concurrency: 20,
+      },
     ).tap(obj => log.info('Youtube IDs acquired.')).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube IDs to file.');
       return results;
     }).map(obj =>
       // 3. get Youtube video info of each video if needed
-      getVideoInfo(obj).then(info => {
+      getVideoInfo(obj).then((info) => {
         obj.videoInfo = info;
         return obj;
       }),
-      // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT 
+      // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
       {
-        concurrency: 20
-      }
+        concurrency: 20,
+      },
     ).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube video data to file.');
