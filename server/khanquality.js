@@ -42,6 +42,10 @@ const KhanQuality = (logger) => {
     .catch(err =>
       // if file doesn't exist (assume not corrupted), then get from API
       kaTopicTree.getFromAPI(rootTopic)
+      // convert each topic to an obj
+      .map(topicTitle => ({
+        title: topicTitle
+      }))
       .then((results) => {
         // aggregated results, in the form of jagged(nested) array
         // log.info(results);
@@ -52,20 +56,17 @@ const KhanQuality = (logger) => {
     );
 
   // get corresponding Youtube video ID of a topic - Khan Academy API
-  const getYoutubeID = (topic) => {
+  const getYoutubeID = (obj) => {
     // check topic is valid string
-    if (topic === null || topic === undefined) {
+    if (obj === null || obj === undefined) {
       return Promise.reject('Improper topic');
     }
     // shortcut if already have youtube id
-    if (topic.youtubeid)
-      return Promise.resolve(topic.youtubeid);
+    if (obj.youtubeid)
+      return Promise.resolve(obj.youtubeid);
 
-    if (typeof topic !== 'string') {
-      return Promise.reject('Topic is not a string.');
-    }
-
-    options.uri = `http://www.khanacademy.org/api/v1/videos/${topic}`;
+    const title = obj.title;
+    options.uri = `http://www.khanacademy.org/api/v1/videos/${title}`;
     return rp(options)
       .then(rawdata => rawdata.translated_youtube_id)
       .catch((err) => {
@@ -75,6 +76,10 @@ const KhanQuality = (logger) => {
 
   // get Youtube video detailed info from Youtube API
   const getVideoInfo = (obj) => {
+    // shortcut if already have video info
+    if (obj.videoInfo)
+      return Promise.resolve(obj.videoInfo);
+
     // check youtube video id valid
     const yid = obj.youtubeid;
     if (yid === null || yid === undefined || typeof yid !== 'string') {
@@ -88,11 +93,22 @@ const KhanQuality = (logger) => {
     const fullurl = `${baseurl}?id=${yid}` + `&part=${reqparts}` + `&key=${key}`;
     options.uri = fullurl;
     return rp(options)
-      .then((rawdata) => {
-        log.info(rawdata);
-        if (!rawdata || rawdata.length == '')
+      .then((obj) => {
+        // log.info(obj);
+        if (!obj || obj.length == '')
           return Promise.reject('Could not get data from url.');
-        return rawdata;
+
+        // remove unnecessary data to reduce file size & process memory usage
+        // approx. 75% reduction (tested: 280kb -> 67kb)
+        if (!obj.video.items[0]) {
+          log.info('undefined snippet');
+          return obj;
+        }
+        const snip = obj.videoInfo.items[0].snippet;
+        snip.description = "omitted";
+        snip.thumbnails = "omitted";
+        snip.localized.description = "omitted";
+        return obj;
       })
       .catch((err) => {
         log.error(err);
@@ -104,28 +120,32 @@ const KhanQuality = (logger) => {
   const execute = (rootTopic) => {
     getTopics(rootTopic).tap((topics) => {
       log.info(`${topics.length} topics.`);
-    }).map(topic =>
-      // 2. get Youtube video ID of each video if needed
-      getYoutubeID(topic).then(yid => ({
-        title: topic,
+    }).map(obj =>
+      // 2. get Youtube video ID of each video if needed (is slowest step)
+      getYoutubeID(obj).then(yid => ({
+        title: obj.title,
         youtubeid: yid,
       }))
-    ).tap(obj => log.info('Youtube IDs acquired.')).map(obj =>
+      // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
+      , {
+        concurrency: 20
+      }
+    ).tap(obj => log.info('Youtube IDs acquired.')).then((results) => {
+      writeFile(topicsFilePath, JSON.stringify(results)); // write to file
+      log.info('Written Youtube IDs to file.');
+      return results;
+    }).map(obj =>
       // 3. get Youtube video info of each video if needed
       getVideoInfo(obj).then(info => ({
         title: obj.title,
         youtubeid: obj.youtubeid,
         videoInfo: info,
-      }))
-    ).map(obj => {
-      // 4. remove unnecessary data to reduce file size
-      // approx. 75% reduction (tested: 280kb -> 67kb)
-      const snip = obj.videoInfo.items[0].snippet;
-      snip.description = "omitted";
-      snip.thumbnails = "omitted";
-      snip.localized.description = "omitted";
-      return obj;
-    }).then((results) => {
+      })),
+      // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT 
+      {
+        concurrency: 20
+      }
+    ).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube video data to file.');
       log.info('Done.');
