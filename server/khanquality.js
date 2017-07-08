@@ -122,10 +122,10 @@ const KhanQuality = (logger) => {
       log.info(`${topics.length} topics.`);
     }).map(obj =>
       // 2. get Youtube video ID of each video if needed (is slowest step)
-      getYoutubeID(obj).then(yid => ({
-        title: obj.title,
-        youtubeid: yid,
-      }))
+      getYoutubeID(obj).then(yid => {
+        obj.youtubeid = yid;
+        return obj;
+      })
       // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
       , {
         concurrency: 20
@@ -136,11 +136,10 @@ const KhanQuality = (logger) => {
       return results;
     }).map(obj =>
       // 3. get Youtube video info of each video if needed
-      getVideoInfo(obj).then(info => ({
-        title: obj.title,
-        youtubeid: obj.youtubeid,
-        videoInfo: info,
-      })),
+      getVideoInfo(obj).then(info => {
+        obj.videoInfo = info;
+        return obj;
+      }),
       // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT 
       {
         concurrency: 20
