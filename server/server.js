@@ -80,5 +80,8 @@ app.post('/api/users', jsonParser, (req, res) => {
 */
 
 const KhanQuality = require('./khanquality.js')(log);
-
-KhanQuality.execute();
+// the entire topic tree is 30mb :(
+// start off with a root (proof of concept)
+KhanQuality.execute('humanities');
+// cells: 61 topics
+// humanities: 2465 topics

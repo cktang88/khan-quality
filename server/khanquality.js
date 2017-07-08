@@ -24,14 +24,8 @@ const KhanQuality = (logger) => {
   const stat = Promise.promisify(require('fs').stat);
 
   const topicsFilePath = './data/topics.json';
-  // the entire topic tree is 30mb :(
-  const rootTopic = 'cells'; // start off with a root (proof of concept)
 
   const options = {
-    headers: {
-      // spoof user-agent
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
-    },
     json: true, // Automatically parses the JSON string in the response
   };
 
@@ -39,7 +33,7 @@ const KhanQuality = (logger) => {
 
   /* basic caching */
   // fs.stat returns result if file exists, ENOENT error if file doesn't exist
-  const getTopics = () => stat(topicsFilePath)
+  const getTopics = (rootTopic) => stat(topicsFilePath)
     // if file exists, read from file
     .then(result => readFile(topicsFilePath).then((contents) => {
       log.info('Loaded topics from file.');
@@ -47,7 +41,7 @@ const KhanQuality = (logger) => {
     }))
     .catch(err =>
       // if file doesn't exist (assume not corrupted), then get from API
-      kaTopicTree.getFromAPI('cells')
+      kaTopicTree.getFromAPI(rootTopic)
       .then((results) => {
         // aggregated results, in the form of jagged(nested) array
         // log.info(results);
@@ -107,8 +101,8 @@ const KhanQuality = (logger) => {
 
   // main runner
   // 1. get topics
-  const execute = () => {
-    getTopics().tap((topics) => {
+  const execute = (rootTopic) => {
+    getTopics(rootTopic).tap((topics) => {
       log.info(`${topics.length} topics.`);
     }).map(topic =>
       // 2. get Youtube video ID of each video if needed
