@@ -2,7 +2,7 @@
 
 Main application-specific module.
 
-Usage: 
+Usage:
 const kq = require('./khanquality.js')(loggerInstance);
 kq.execute();
 
@@ -35,24 +35,6 @@ const KhanQuality = (logger) => {
     json: true, // Automatically parses the JSON string in the response
   };
 
-  // get corresponding Youtube video ID of a topic - Khan Academy API
-  const getYoutubeID = (topic) => {
-    // check topic is valid string
-    if (topic === null || topic === undefined) {
-      return Promise.reject('Improper topic');
-    }
-    if (typeof topic !== 'string') {
-      return Promise.reject('Topic is not a string.');
-    }
-
-    options.uri = `http://www.khanacademy.org/api/v1/videos/${topic}`;
-    return rp(options)
-      .then(rawdata => rawdata.translated_youtube_id)
-      .catch((err) => {
-        log.error(err);
-      });
-  };
-
   const kaTopicTree = require('./ka-topic-tree.js')(log, false);
 
   /* basic caching */
@@ -75,6 +57,29 @@ const KhanQuality = (logger) => {
       }),
     );
 
+  // get corresponding Youtube video ID of a topic - Khan Academy API
+  const getYoutubeID = (topic) => {
+    // check topic is valid string
+    if (topic === null || topic === undefined) {
+      return Promise.reject('Improper topic');
+    }
+    // shortcut if already have youtube id
+    if (topic.youtubeid)
+      return Promise.resolve(topic.youtubeid);
+
+    if (typeof topic !== 'string') {
+      return Promise.reject('Topic is not a string.');
+    }
+
+    options.uri = `http://www.khanacademy.org/api/v1/videos/${topic}`;
+    return rp(options)
+      .then(rawdata => rawdata.translated_youtube_id)
+      .catch((err) => {
+        log.error(err);
+      });
+  };
+
+  // get Youtube video detailed info from Youtube API
   const getVideoInfo = (obj) => {
     // check youtube video id valid
     const yid = obj.youtubeid;
@@ -88,7 +93,12 @@ const KhanQuality = (logger) => {
     const fullurl = `${baseurl}?id=${yid}` + `&part=${reqparts}` + `&key=${key}`;
     options.uri = fullurl;
     return rp(options)
-      .then(rawdata => JSON.parse(rawdata))
+      .then((rawdata) => {
+        log.info(rawdata);
+        if (!rawdata || rawdata.length == '')
+          return Promise.reject('Could not get data from url.');
+        return rawdata;
+      })
       .catch((err) => {
         log.error(err);
       });
@@ -97,22 +107,25 @@ const KhanQuality = (logger) => {
   // main runner
   // 1. get topics
   const execute = () => {
-    getTopics().then((topics) => {
-      if (topics === null || topics === undefined) {
-        return Promise.reject('No topics.');
-      }
+    getTopics().tap((topics) => {
       log.info(`${topics.length} topics.`);
-      return topics;
     }).map(topic =>
-      // 2. get Youtube video ID of each video
+      // 2. get Youtube video ID of each video if needed
       getYoutubeID(topic).then(yid => ({
         title: topic,
         youtubeid: yid,
-      })),
-      // .then(obj => getVideoInfo(obj)),
+      }))
+    ).tap(obj => log.info('Youtube IDs acquired.')).map(obj =>
+      // 3. get Youtube video info of each video if needed
+      getVideoInfo(obj).then(info => ({
+        title: obj.title,
+        youtubeid: obj.youtubeid,
+        videoInfo: info,
+      }))
     ).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
-      log.info('Written Youtube video IDs to file.');
+      log.info('Written Youtube video data to file.');
+      log.info('Done.');
     }).catch((err) => {
       log.error(err);
     });
