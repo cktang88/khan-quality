@@ -93,22 +93,22 @@ const KhanQuality = (logger) => {
     const fullurl = `${baseurl}?id=${yid}` + `&part=${reqparts}` + `&key=${key}`;
     options.uri = fullurl;
     return rp(options)
-      .then((obj) => {
+      .then((rawdata) => {
         // log.info(obj);
-        if (!obj || obj.length == '')
+        if (!rawdata || rawdata.length == '')
           return Promise.reject('Could not get data from url.');
 
         // remove unnecessary data to reduce file size & process memory usage
         // approx. 75% reduction (tested: 280kb -> 67kb)
-        if (!obj.video.items[0]) {
+        if (!rawdata.items[0]) {
           log.info('undefined snippet');
-          return obj;
+          return rawdata;
         }
-        const snip = obj.videoInfo.items[0].snippet;
+        const snip = rawdata.items[0].snippet;
         snip.description = "omitted";
         snip.thumbnails = "omitted";
         snip.localized.description = "omitted";
-        return obj;
+        return rawdata;
       })
       .catch((err) => {
         log.error(err);
