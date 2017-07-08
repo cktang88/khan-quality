@@ -89,6 +89,7 @@ const KhanQuality = (logger) => {
 
     const baseurl = 'https://www.googleapis.com/youtube/v3/videos';
     const key = process.env.kq_youtube_key;
+    // note: can't access 'fileDetails' param unless owner of video
     const reqparts = ['snippet', 'contentDetails', 'statistics'].join('%2C');
     const fullurl = `${baseurl}?id=${yid}` + `&part=${reqparts}` + `&key=${key}`;
     options.uri = fullurl;
@@ -122,7 +123,15 @@ const KhanQuality = (logger) => {
         youtubeid: obj.youtubeid,
         videoInfo: info,
       }))
-    ).then((results) => {
+    ).map(obj => {
+      // 4. remove unnecessary data to reduce file size
+      // approx. 75% reduction (tested: 280kb -> 67kb)
+      const snip = obj.videoInfo.items[0].snippet;
+      snip.description = "omitted";
+      snip.thumbnails = "omitted";
+      snip.localized.description = "omitted";
+      return obj;
+    }).then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written Youtube video data to file.');
       log.info('Done.');
