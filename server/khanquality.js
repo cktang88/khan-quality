@@ -97,7 +97,8 @@ const KhanQuality = (logger) => {
         // remove unnecessary data to reduce file size & process memory usage
         // approx. 75% reduction (tested: 280kb -> 67kb)
         if (!rawdata.items[0]) {
-          log.info('undefined snippet');
+          // indicates the video is no longer available for viewing
+          log.info(`No video data available for ${obj.title}`);
           return rawdata;
         }
         const snip = rawdata.items[0].snippet;
