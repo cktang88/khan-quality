@@ -37,9 +37,11 @@ const kaTopicTree = (logger, nested) => {
         // a = article, e = excercise, v = video
         // log.info(val);
         const tmp = val.split('/');
-        if (tmp[0] === 'v') {
-          // only output videos to array
-          return tmp[1];
+        if (tmp[0] === 'v') { // only output videos to array
+          // returns an array of objects
+          return {
+            title: tmp[1]
+          };
         }
       } else {
         log.info(`> ${val}`);
