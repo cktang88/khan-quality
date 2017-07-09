@@ -4,7 +4,7 @@
   "description": "An app to find videos that need attention in Khan Academy",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon ./server/server.js",
+    "start": "node ./server/dataCollector.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --fix **/*.js"
   },

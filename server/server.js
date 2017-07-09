@@ -1,5 +1,7 @@
 'use strict';
 
+/* Hosts a user-facing website with Express */
+
 // custom logger --> share one instance across all modules/files
 const log = require('./logger.js');
 // custom db manager
@@ -20,13 +22,11 @@ const server = require('http').Server(app);
 const version = `Express-Boilerplate v${require('../package.json').version}`;
 
 // start server
-/*
 server.listen(port, () => {
   log.info(version);
   log.info(`Listening on port ${port}`);
 });
-*/
-/*
+
 const processWord = (word, socket) => {
   if (!socket) {
     log.error('Socket is undefined.');
@@ -76,12 +76,3 @@ app.post('/api/users', jsonParser, (req, res) => {
   if (!req.body) return res.sendStatus(400);
   // create user in req.body
 });
-
-*/
-
-const KhanQuality = require('./khanquality.js')(log);
-// the entire topic tree is 30mb :(
-// start off with a root (proof of concept)
-KhanQuality.execute('humanities');
-// cells: 61 topics
-// humanities: 2465 topics
