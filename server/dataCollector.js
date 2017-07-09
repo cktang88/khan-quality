@@ -11,7 +11,7 @@ const Promise = require('bluebird');
 
 // TODO: use MongoDB instead of storing as JSON file manually
 
-const kq = require('./khanquality.js')(log);
+const YD = require('./youtubedata.js')(log);
 
 // promisify IO functions, replacing callbacks
 const writeFile = Promise.promisify(require('fs').writeFile);
@@ -44,7 +44,7 @@ const getTopics = rootTopic =>
   );
 
 // wrapper: get youtube video ID from Khan Academy API
-const addYoutubeID = obj => {
+const addYoutubeID = (obj) => {
   // check topic is valid string
   if (!obj || !obj.title) {
     return Promise.reject('Improper topic');
@@ -54,14 +54,14 @@ const addYoutubeID = obj => {
     return Promise.resolve(obj);
   }
 
-  return kq.getYoutubeID(obj.title)
+  return YD.getYoutubeID(obj.title)
     .then((yid) => {
       obj.youtubeid = yid;
       return obj;
     });
-}
+};
 // wrapper: add video info from Youtube API
-const addVideoInfo = obj => {
+const addVideoInfo = (obj) => {
   // check youtube video id valid
   const yid = obj.youtubeid;
   if (!yid || typeof yid !== 'string') {
@@ -72,17 +72,19 @@ const addVideoInfo = obj => {
     return Promise.resolve(obj);
   }
 
-  return kq.getVideoInfo(yid)
+  return YD.getVideoInfo(yid)
     .then((info) => {
       obj.videoInfo = info;
       return obj;
     });
-}
+};
+
+// TODO: eventually convert to streams to reduce memory usage
 
 // 1. get topics
 const execute = rootTopic =>
   getTopics(rootTopic)
-  .tap((topics) => log.info(`${topics.length} topics.`))
+  .tap(topics => log.info(`${topics.length} topics.`))
   .map(obj =>
     // 2. get Youtube video ID of each video if needed (is slowest step)
     addYoutubeID(obj), {
@@ -109,7 +111,7 @@ const execute = rootTopic =>
   });
 
 // the entire topic tree is 30mb :(
-// start off with a root (proof of concept)
+// start with a root (proof of concept)
 execute('cells');
 
 // global-art-architecture: 19 videos

@@ -1,5 +1,5 @@
 /*
-Helper module to retrieve data from APIs
+Retrieve Youtube video-related data from APIs
 
 Usage:
 const kq = require('./khanquality.js')(loggerInstance);
@@ -8,13 +8,11 @@ const kq = require('./khanquality.js')(loggerInstance);
 
 'use strict';
 
-const KhanQuality = (logger) => {
+const youtubeData = (logger) => {
   const rp = require('request-promise');
   // NTOE: assert funcs don't work w/ promises, which never throw...
   const Promise = require('bluebird');
   const log = logger;
-
-  // TODO: eventually convert to streams to reduce memory usage
 
   const options = {
     json: true, // Automatically parses the JSON string in the response
@@ -70,4 +68,4 @@ const KhanQuality = (logger) => {
     getVideoInfo,
   };
 };
-module.exports = KhanQuality;
+module.exports = youtubeData;
