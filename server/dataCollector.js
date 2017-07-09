@@ -2,6 +2,7 @@
 
 /* Collects data from Khan Academy and Youtube APIs.
    Intended to be run once, with data being stored persistently
+   (Is the only part of the app that deals with IO, data storage)
 */
 
 // custom logger --> share one instance across all modules/files
@@ -23,14 +24,17 @@ const kaTopicTree = require('./ka-topic-tree.js')(log, false);
 
 /* basic caching */
 // fs.stat returns result if file exists, ENOENT error if file doesn't exist
-const getTopics = rootTopic => stat(topicsFilePath)
-  // if file exists, read from file
-  .then(result => readFile(topicsFilePath).then((contents) => {
-    log.info('Loaded topics from file.');
-    return JSON.parse(contents);
-  }))
+const getTopics = rootTopic =>
+  stat(topicsFilePath)
+  .then(result =>
+    // if file exists, read from file
+    readFile(topicsFilePath)
+    .then((contents) => {
+      log.info('Loaded topics from file.');
+      return JSON.parse(contents);
+    }))
   .catch(err =>
-    // if file doesn't exist (assume not corrupted), then get from API
+    // if file doesn't exist, get from API
     kaTopicTree.getFromAPI(rootTopic)
     .then((results) => {
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
@@ -39,22 +43,50 @@ const getTopics = rootTopic => stat(topicsFilePath)
     }),
   );
 
-// 1. get topics
-const execute = rootTopic =>
-  getTopics(rootTopic)
-  .tap((topics) => {
-    log.info(`${topics.length} topics.`);
-  })
-  .map(obj =>
-    // 2. get Youtube video ID of each video if needed (is slowest step)
-    kq.getYoutubeID(obj)
+// wrapper: get youtube video ID from Khan Academy API
+const addYoutubeID = obj => {
+  // check topic is valid string
+  if (!obj || !obj.title) {
+    return Promise.reject('Improper topic');
+  }
+  // shortcut if already have youtube id
+  if (obj.youtubeid) {
+    return Promise.resolve(obj);
+  }
+
+  return kq.getYoutubeID(obj.title)
     .then((yid) => {
       obj.youtubeid = yid;
       return obj;
-    })
-    // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
-    , {
-      concurrency: 20,
+    });
+}
+// wrapper: add video info from Youtube API
+const addVideoInfo = obj => {
+  // check youtube video id valid
+  const yid = obj.youtubeid;
+  if (!yid || typeof yid !== 'string') {
+    return Promise.reject('Youtube ID does not exist.');
+  }
+  // shortcut if already have video info
+  if (obj.videoInfo) {
+    return Promise.resolve(obj);
+  }
+
+  return kq.getVideoInfo(yid)
+    .then((info) => {
+      obj.videoInfo = info;
+      return obj;
+    });
+}
+
+// 1. get topics
+const execute = rootTopic =>
+  getTopics(rootTopic)
+  .tap((topics) => log.info(`${topics.length} topics.`))
+  .map(obj =>
+    // 2. get Youtube video ID of each video if needed (is slowest step)
+    addYoutubeID(obj), {
+      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
   .tap(obj => log.info('Youtube IDs acquired.'))
   .then((results) => {
@@ -64,14 +96,8 @@ const execute = rootTopic =>
   })
   .map(obj =>
     // 3. get Youtube video info of each video if needed
-    kq.getVideoInfo(obj)
-    .then((info) => {
-      obj.videoInfo = info;
-      return obj;
-    }),
-    // 20 concurrent max to prevent ECONNRESET and ETIMEDOUT
-    {
-      concurrency: 20,
+    addVideoInfo(obj), {
+      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
   .then((results) => {
     writeFile(topicsFilePath, JSON.stringify(results)); // write to file

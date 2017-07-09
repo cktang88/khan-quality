@@ -21,17 +21,7 @@ const KhanQuality = (logger) => {
   };
 
   // get corresponding Youtube video ID of a topic - Khan Academy API
-  const getYoutubeID = (obj) => {
-    // check topic is valid string
-    if (!obj) {
-      return Promise.reject('Improper topic');
-    }
-    // shortcut if already have youtube id
-    if (obj.youtubeid) {
-      return Promise.resolve(obj.youtubeid);
-    }
-
-    const title = obj.title;
+  const getYoutubeID = (title) => {
     options.uri = `http://www.khanacademy.org/api/v1/videos/${title}`;
     return rp(options)
       .then(rawdata => rawdata.translated_youtube_id)
@@ -42,22 +32,12 @@ const KhanQuality = (logger) => {
 
   // get Youtube video detailed info from Youtube API
   // Documentation: https://developers.google.com/youtube/v3/docs/videos
-  const getVideoInfo = (obj) => {
-    // check youtube video id valid
-    const yid = obj.youtubeid;
-    if (!yid || typeof yid !== 'string') {
-      return Promise.reject('Youtube ID does not exist.');
-    }
-    // shortcut if already have video info
-    if (obj.videoInfo) {
-      return Promise.resolve(obj.videoInfo);
-    }
-
+  const getVideoInfo = (videoID) => {
     const baseurl = 'https://www.googleapis.com/youtube/v3/videos';
     const key = process.env.kq_youtube_key;
     // note: can't access 'fileDetails' param unless owner of video
     const reqparts = ['snippet', 'contentDetails', 'statistics'].join('%2C');
-    const fullurl = `${baseurl}?id=${yid}&part=${reqparts}&key=${key}`;
+    const fullurl = `${baseurl}?id=${videoID}&part=${reqparts}&key=${key}`;
     options.uri = fullurl;
     return rp(options)
       .then((rawdata) => {
@@ -72,7 +52,7 @@ const KhanQuality = (logger) => {
           return data;
         }
         // remove unnecessary data to reduce file size & process memory usage
-        // approx. 80% reduction (tested: 280kb -> 57kb)
+        // approx. 80% reduction (tested: 280kb -> 54kb)
         data.etag = 'omit';
         const snip = data.snippet;
         snip.description = 'omit';
