@@ -31,7 +31,7 @@ const processWord = (word, socket) => {
   if (!socket) {
     log.error('Socket is undefined.');
   }
-}
+};
 
 // SOCKET.IO
 const io = require('socket.io').listen(server);

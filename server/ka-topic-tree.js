@@ -40,7 +40,7 @@ const kaTopicTree = (logger, nested) => {
         if (tmp[0] === 'v') { // only output videos to array
           // returns an array of objects
           return {
-            title: tmp[1]
+            title: tmp[1],
           };
         }
       } else {
@@ -49,7 +49,8 @@ const kaTopicTree = (logger, nested) => {
       }
       // default
       return undefined;
-    }).filter(item => item !== undefined);
+    })
+    .filter(item => item !== undefined);
 
 
   const options = {
