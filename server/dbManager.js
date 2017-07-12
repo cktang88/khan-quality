@@ -34,7 +34,7 @@ const dbManager = (logger) => {
   const upsert = doc => {
     // Update the document using an UPSERT operation, ensuring creation if it does not exist
     // does not change "_id" value
-    return collection.updateOne({title: doc.title}, doc, {upsert: true})
+    return collection.updateOne({title: doc.title, youtubeid: doc.youtubeid}, doc, {upsert: true})
       .then(() => {
         log.debug(`Inserted ${doc.title}`);
       })
