@@ -83,10 +83,14 @@ const savedoc = (obj) => {
 }
 
 let completed = 0;
+let numtopics = 0;
 // todo: use streams?
 const execute = (rootTopic) =>
   getTopics(rootTopic) // 1. get topics
-  .tap(topics => log.info(`${topics.length} topics.`))
+  .tap(topics => {
+    numtopics = topics.length;
+    log.info(`${numtopics} topics.`)
+  })
   .map(obj => {
     return addYoutubeID(obj) // 2. get Youtube video ID of each video
       .then(addVideoInfo) // 3. get Youtube video info of each video
@@ -94,7 +98,7 @@ const execute = (rootTopic) =>
       .then(() => {
         completed++;
         if(completed%50===0)
-          log.info(completed);
+          log.info(`${Math.floor(completed/numtopics*100)}%`);
       }); // progress indicator
   }, {
     concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
