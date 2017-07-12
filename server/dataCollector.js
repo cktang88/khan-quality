@@ -82,6 +82,7 @@ const savedoc = (obj) => {
   return Promise.resolve();
 }
 
+let completed = 0;
 // todo: use streams?
 const execute = (rootTopic) =>
   getTopics(rootTopic) // 1. get topics
@@ -89,7 +90,12 @@ const execute = (rootTopic) =>
   .map(obj => {
     return addYoutubeID(obj) // 2. get Youtube video ID of each video
       .then(addVideoInfo) // 3. get Youtube video info of each video
-      .then(savedoc); // 4. save to db
+      .then(savedoc) // 4. save to db
+      .then(() => {
+        completed++;
+        if(completed%50===0)
+          log.info(completed);
+      }); // progress indicator
   }, {
     concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
   })
