@@ -78,9 +78,11 @@ const addVideoInfo = (obj) => {
 };
 const savedoc = (obj) => {
   db.upsert(obj);
-  return obj;
+  obj = undefined; // reset object, hopefully saving lots of memory => todo: profile
+  return Promise.resolve();
 }
 
+// todo: use streams?
 const execute = (rootTopic) =>
   getTopics(rootTopic) // 1. get topics
   .tap(topics => log.info(`${topics.length} topics.`))
@@ -91,14 +93,12 @@ const execute = (rootTopic) =>
   }, {
     concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
   })
-  .then((results) => log.info('Done.'))
-  .catch((err) => {
-    log.error(err);
-  });
+  .then(() => log.info('Done.'))
+  .catch((err) => log.error(err));
+
 
 // the entire topic tree is 30mb :(
 // start with a root (proof of concept)
-
 db.connect()
   .then(() => {
     execute('cells');

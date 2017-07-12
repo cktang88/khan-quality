@@ -68,9 +68,7 @@ const kaTopicTree = (logger, nested) => {
         // flatten any nested arrays as we go if nested===false
         return nested ? data : data.reduce((a, b) => a.concat(b), []);
       })
-      .catch((err) => {
-        log.error(err);
-      });
+      .catch((err) => log.error(err));
   };
 
   return {

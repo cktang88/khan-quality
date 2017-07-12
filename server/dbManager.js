@@ -38,9 +38,7 @@ const dbManager = (logger) => {
       .then(() => {
         log.debug(`Inserted ${doc.title}`);
       })
-      .catch(err => {
-        log.error(err);
-      });
+      .catch(err => log.error(err));
       // note use {$set: ...} to set just one field
   }
   
