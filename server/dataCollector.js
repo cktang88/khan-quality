@@ -8,9 +8,7 @@
 // custom logger --> share one instance across all modules/files
 const log = require('./logger.js');
 const Promise = require('bluebird');
-
-// TODO: use MongoDB instead of storing as JSON file manually
-
+const db = require('./dbManager.js')(log);
 const YD = require('./youtubedata.js')(log);
 
 // promisify IO functions, replacing callbacks
@@ -58,6 +56,11 @@ const addYoutubeID = (obj) => {
     .then((yid) => {
       obj.youtubeid = yid;
       return obj;
+    })
+    .then(obj => {
+      // add/update db
+      db.upsert(obj);
+      return obj;
     });
 };
 // wrapper: add video info from Youtube API
@@ -76,6 +79,11 @@ const addVideoInfo = (obj) => {
     .then((info) => {
       obj.videoInfo = info;
       return obj;
+    })
+    .then(obj => {
+      // add/update db
+      db.upsert(obj);
+      return obj;
     });
 };
 
@@ -91,8 +99,8 @@ const execute = (rootTopic) =>
     })
   .tap(obj => log.info('Youtube IDs acquired.'))
   .then((results) => {
-    writeFile(topicsFilePath, JSON.stringify(results)); // write to file
-    log.info('Written Youtube IDs to file.');
+    //writeFile(topicsFilePath, JSON.stringify(results)); // write to file
+    //log.info('Written Youtube IDs to file.');
     return results;
   })
   .map(addVideoInfo, // 3. get Youtube video info of each video if needed
@@ -100,8 +108,8 @@ const execute = (rootTopic) =>
       concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
   .then((results) => {
-    writeFile(topicsFilePath, JSON.stringify(results)); // write to file
-    log.info('Written Youtube video data to file.');
+    //writeFile(topicsFilePath, JSON.stringify(results)); // write to file
+    //log.info('Written Youtube video data to file.');
     log.info('Done.');
   })
   .catch((err) => {
@@ -110,7 +118,11 @@ const execute = (rootTopic) =>
 
 // the entire topic tree is 30mb :(
 // start with a root (proof of concept)
-execute('cells');
+
+db.connect()
+  .then(() => {
+    execute('cells');
+  });
 
 // global-art-architecture: 19 videos
 // cells: 61 videos

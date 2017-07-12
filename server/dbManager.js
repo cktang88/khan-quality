@@ -1,44 +1,53 @@
-/* uses Monk as layer over MongoDB */
-
-// Why use Monk:
-// 1. nice syntax (combines similar mongo default functions into more general functions)
-// 2. promise-compatible
-// 3. has middleware plugins
-
 'use strict';
 
 const dbManager = (logger) => {
   const log = logger;
 
   // Connection
-  const user = process.env.user;
-  const password = process.env.password;
-  const dbname = process.env.db_name;
-  const url = `mongodb://${user}:${password}@[db hosting address]/${dbname}`;
+  const pe = process.env;
+  const url = `mongodb://${pe.user}:${pe.password}@${pe.db_host}:${pe.db_port}/${pe.db_name}`;
 
-  const db = {};
-  let col = {};
-  /* sample db workflow */
+  let db = {};
+  let collection = {};
 
-// TODO: split up into separate funcs for insert, find, update
-
-  require('monk')(url).then((db) => {
-    log(`Connected to mongodb at ${url}`);
-    // collection
-    col = db.get('khan-info');
-  }).then((col) => {
+  const connect = () => require('mongodb').MongoClient.connect(url)
+  .then((db_inst) => {
+    log.info(`Connected to mongodb at ${url}`);
+    // get db, collection
+    db = db_inst;
+    collection = db.collection('khan-info'); // get existing collection, or create if doesn't exist
+  }).catch(err => log.error(err));
+  /*
+  then((col) => {
     col.remove({});
     return col;
   }).then((col) => {
     log('Collection cleared.');
-    const arr = [];
-    return col.insert(arr);
-  }).then((col) => {
-    log(`Inserted ${col.length} docs into collection.`);
-  }).then(() => {
-    db.close();
-    log('db closed successfully.');
-  });
+    });
+    */
+
+  /*
+  db.close();
+  log.info('db closed successfully.');
+  */
+
+  const upsert = doc => {
+    // Update the document using an UPSERT operation, ensuring creation if it does not exist
+    // does not change "_id" value
+    return collection.updateOne({title: doc.title}, doc, {upsert: true})
+      .then(() => {
+        log.info('inserted a doc');
+      })
+      .catch(err => {
+        log.info(err);
+      });
+      // note use {$set: ...} to set just one field
+  }
+  
+  return {
+    connect: connect,
+    upsert: upsert
+  }
 };
 
 module.exports = dbManager;
