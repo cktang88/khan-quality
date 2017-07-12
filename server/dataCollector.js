@@ -56,11 +56,6 @@ const addYoutubeID = (obj) => {
     .then((yid) => {
       obj.youtubeid = yid;
       return obj;
-    })
-    .then(obj => {
-      // add/update db
-      db.upsert(obj);
-      return obj;
     });
 };
 // wrapper: add video info from Youtube API
@@ -79,39 +74,24 @@ const addVideoInfo = (obj) => {
     .then((info) => {
       obj.videoInfo = info;
       return obj;
-    })
-    .then(obj => {
-      // add/update db
-      db.upsert(obj);
-      return obj;
     });
 };
+const savedoc = (obj) => {
+  db.upsert(obj);
+  return obj;
+}
 
-// TODO: eventually convert to streams to reduce memory usage
-
-// 1. get topics
 const execute = (rootTopic) =>
-  getTopics(rootTopic)
+  getTopics(rootTopic) // 1. get topics
   .tap(topics => log.info(`${topics.length} topics.`))
-  .map(addYoutubeID, // 2. get Youtube video ID of each video if needed (is slowest step)
-    {
-      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
-    })
-  .tap(obj => log.info('Youtube IDs acquired.'))
-  .then((results) => {
-    //writeFile(topicsFilePath, JSON.stringify(results)); // write to file
-    //log.info('Written Youtube IDs to file.');
-    return results;
+  .map(obj => {
+    return addYoutubeID(obj) // 2. get Youtube video ID of each video
+      .then(addVideoInfo) // 3. get Youtube video info of each video
+      .then(savedoc); // 4. save to db
+  }, {
+    concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
   })
-  .map(addVideoInfo, // 3. get Youtube video info of each video if needed
-    {
-      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
-    })
-  .then((results) => {
-    //writeFile(topicsFilePath, JSON.stringify(results)); // write to file
-    //log.info('Written Youtube video data to file.');
-    log.info('Done.');
-  })
+  .then((results) => log.info('Done.'))
   .catch((err) => {
     log.error(err);
   });

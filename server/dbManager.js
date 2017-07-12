@@ -36,10 +36,10 @@ const dbManager = (logger) => {
     // does not change "_id" value
     return collection.updateOne({title: doc.title}, doc, {upsert: true})
       .then(() => {
-        log.info('inserted a doc');
+        log.debug(`Inserted ${doc.title}`);
       })
       .catch(err => {
-        log.info(err);
+        log.error(err);
       });
       // note use {$set: ...} to set just one field
   }
