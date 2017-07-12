@@ -82,12 +82,11 @@ const addVideoInfo = (obj) => {
 // TODO: eventually convert to streams to reduce memory usage
 
 // 1. get topics
-const execute = rootTopic =>
+const execute = (rootTopic) =>
   getTopics(rootTopic)
   .tap(topics => log.info(`${topics.length} topics.`))
-  .map(obj =>
-    // 2. get Youtube video ID of each video if needed (is slowest step)
-    addYoutubeID(obj), {
+  .map(addYoutubeID, // 2. get Youtube video ID of each video if needed (is slowest step)
+    {
       concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
   .tap(obj => log.info('Youtube IDs acquired.'))
@@ -96,9 +95,8 @@ const execute = rootTopic =>
     log.info('Written Youtube IDs to file.');
     return results;
   })
-  .map(obj =>
-    // 3. get Youtube video info of each video if needed
-    addVideoInfo(obj), {
+  .map(addVideoInfo, // 3. get Youtube video info of each video if needed
+    {
       concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
   .then((results) => {
