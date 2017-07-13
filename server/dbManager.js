@@ -11,7 +11,10 @@ const dbManager = (logger) => {
   let collection = null;
   let adminDb = null;
 
-  const connect = () => require('mongodb').MongoClient.connect(url)
+  const connect = () =>
+    require('mongodb').MongoClient.connect(url, {
+      poolSize: 20
+    }) // default poolsize = 5
     .then((db_inst) => {
       log.info(`Connected to mongodb at ${url}`);
       // get db, collection
@@ -20,14 +23,6 @@ const dbManager = (logger) => {
       // NOTE: Collections are not created until the first document is inserted
       collection = db.collection('khan-info');
     }).catch(err => log.error(err));
-  /*
-  then((col) => {
-    col.remove({});
-    return col;
-  }).then((col) => {
-    log('Collection cleared.');
-    });
-    */
 
   const upsert = doc => {
     // Update the document using an UPSERT operation, ensuring creation if it does not exist
@@ -38,7 +33,7 @@ const dbManager = (logger) => {
       }, doc, {
         upsert: true
       })
-      .then((res) => 
+      .then((res) =>
         //if(res.matchedCount!==1 || res.modifiedCount!==1)
         //return Promise.reject(`${res.matchedCount} matched, ${res.modifiedCount} modified`);
         log.debug(`Inserted ${doc.title}`)
@@ -49,16 +44,11 @@ const dbManager = (logger) => {
   // be sure to close
   // https://docs.mongodb.com/manual/reference/method/db.collection.stats/#accuracy-after-unexpected-shutdown
   // can run validate() to verify correct stats
-  const validateAndClose = () => db.admin().validateCollection('khan-info')
-    .then((doc) => {
-      log.info(doc);
-      log.info('DB validated.');
-    })
-    .then(db.close)
-    .then(log.info('DB closed successfully.'))
+  const close = () => db.close()
+    .then(() => log.info('DB closed successfully.'))
 
   return {
-    validateAndClose: validateAndClose,
+    close: close,
     connect: connect,
     upsert: upsert
   };

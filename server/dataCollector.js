@@ -82,7 +82,7 @@ const addVideoInfo = (obj) => {
 };
 const savedoc = (obj) =>
   db.upsert(obj)
-  .then(() => obj = undefined) // reset object, hopefully saving lots of memory => todo: profile
+  .then(() => obj = null) // reset object, hopefully saving lots of memory => todo: profile
 
 let completed = 0;
 let numtopics = 0;
@@ -101,18 +101,20 @@ const execute = (rootTopic) =>
         completed++;
         if (completed % 50 === 0)
           log.info(`${Math.floor(completed/numtopics*100)}%`);
+        return Promise.resolve();
       })
   }, {
     concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
   })
-  .then(() => log.info('Done'))
+  .then((arr) => log.info('Done'))
   .catch(log.error);
 
 // the entire topic tree is 30mb :(
 // start with a root (proof of concept)
 db.connect()
   .then(() => execute('world-history'))
-  //.then(db.validateAndClose)
+  .then(db.close)
+  .catch(log.error);
 
 // global-art-architecture: 19 videos
 // cells: 61 videos
