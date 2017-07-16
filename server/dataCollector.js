@@ -89,9 +89,9 @@ let numtopics = 0;
 // todo: use streams?
 const execute = rootTopic =>
   getTopics(rootTopic) // 1. get topics
-  .then(arr =>  // remove duplicates (assumes not nested)
-    // works for objects since using ==
-    arr.filter((val, index, self) => self.indexOf(val) == index),
+  .then(arr =>  // remove duplicates by field value equality (assumes not nested)
+    arr.filter((e, i) => arr.findIndex(e2 => e.title===e2.title) === i)
+    // is a generalized form of: arr.filter((val, index) => arr.indexOf(val) == index)
   )
   .tap((topics) => {
     numtopics = topics.length;
