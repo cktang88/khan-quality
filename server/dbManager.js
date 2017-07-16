@@ -9,48 +9,49 @@ const dbManager = (logger) => {
 
   let db = null;
   let collection = null;
-  let adminDb = null;
 
   const connect = () =>
     require('mongodb').MongoClient.connect(url, {
-      poolSize: 20
+      poolSize: 20,
     }) // default poolsize = 5
-    .then((db_inst) => {
+    .then((dbInst) => {
       log.info(`Connected to mongodb at ${url}`);
       // get db, collection
-      db = db_inst;
+      db = dbInst;
       // get existing collection, or create if doesn't exist
       // NOTE: Collections are not created until the first document is inserted
       collection = db.collection('khan-info');
     }).catch(err => log.error(err));
 
-  const upsert = doc => {
+  const upsert = doc =>
     // Update the document using an UPSERT operation, ensuring creation if it does not exist
     // does not change "_id" value
-    return collection.updateOne({
-        title: doc.title,
-        youtubeid: doc.youtubeid
-      }, doc, {
-        upsert: true
-      })
-      .then((res) =>
-        //if(res.matchedCount!==1 || res.modifiedCount!==1)
-        //return Promise.reject(`${res.matchedCount} matched, ${res.modifiedCount} modified`);
-        log.debug(`Inserted ${doc.title}`)
-      )
+     collection.updateOne({
+       title: doc.title,
+       youtubeid: doc.youtubeid,
+     }, doc, {
+       upsert: true,
+     })
+      .then(res =>
+        // if(res.matchedCount!==1 || res.modifiedCount!==1)
+        // return Promise.reject(`${res.matchedCount} matched, ${res.modifiedCount} modified`);
+        log.debug(`Inserted ${doc.title}`),
+      );
     // note use {$set: ...} to set just one field
-  }
+
 
   // be sure to close
   // https://docs.mongodb.com/manual/reference/method/db.collection.stats/#accuracy-after-unexpected-shutdown
   // can run validate() to verify correct stats
   const close = () => db.close()
-    .then(() => log.info('DB closed successfully.'))
+    .then((result) => {
+      log.info(`DB closed successfully. ${result}`);
+    });
 
   return {
-    close: close,
-    connect: connect,
-    upsert: upsert
+    close,
+    connect,
+    upsert,
   };
 };
 
