@@ -38,11 +38,13 @@ const kaTopicTree = (logger, nested) => {
           };
         }
       } else {
-        log.info(`> ${val}`);
+        // log.info(`> ${val}`);
         return getTopicTree(val);
       }
       // default
       return undefined;
+    }, {
+      concurrency: 5
     })
     .filter(item => item !== undefined);
 
