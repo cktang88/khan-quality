@@ -80,39 +80,42 @@ const addVideoInfo = (obj) => {
       return obj;
     });
 };
-const savedoc = (obj) =>
+const savedoc = obj =>
   db.upsert(obj)
-  .then(() => obj = null) // reset object, hopefully saving lots of memory => todo: profile
+  .then(() => obj = null); // reset object, hopefully saving lots of memory => todo: profile
 
 let completed = 0;
 let numtopics = 0;
 // todo: use streams?
-const execute = (rootTopic) =>
+const execute = rootTopic =>
   getTopics(rootTopic) // 1. get topics
-  .tap(topics => {
+  .then(arr =>  // remove duplicates (assumes not nested)
+    // works for objects since using ==
+    arr.filter((val, index, self) => self.indexOf(val) == index),
+  )
+  .tap((topics) => {
     numtopics = topics.length;
-    log.info(`${numtopics} topics.`)
+    log.info(`${numtopics} topics.`);
   })
   .map(obj =>
     addYoutubeID(obj) // 2. get Youtube video ID of each video
     .then(addVideoInfo) // 3. get Youtube video info of each video
     .then(savedoc) // 4. save to db
     .tap(() => { // progress indicator
-      completed++;
-      if (completed % 50 === 0)
-        log.info(`${Math.floor(completed/numtopics*100)}%`);
+      completed += 1;
+      if (completed % 50 === 0) { log.info(`${Math.floor(100 * completed / numtopics)}%`); }
     }), {
       concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
     })
-  .then((arr) => log.info('Done'))
-  .catch(log.error);
+  .then(arr => log.info('Done'))
+  .catch(err => log.error(err));
 
 // the entire topic tree is 74MB :(
 // start with a root (proof of concept)
 db.connect()
   .then(() => execute('world-history'))
-  .then(db.close)
-  .catch(log.error);
+  .then(db.close) // if omitted, process never ends. If done, then exits with null error.
+  .catch(err => log.error(err));
 
 // global-art-architecture: 19 videos
 // cells: 61 videos
