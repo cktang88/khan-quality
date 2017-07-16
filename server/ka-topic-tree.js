@@ -10,10 +10,6 @@ Sample usage:
     .then(results => {
       // do something with results
     })
-    .catch(err => {
-      // log error
-  });
-
 */
 
 'use strict';
@@ -32,10 +28,8 @@ const kaTopicTree = (logger, nested) => {
     Promise.map(rawdata.children, (entry, index) => {
       const val = String(entry.node_slug);
       if (val.indexOf('/') > -1) {
-        // eg. "e/..." or "a/..." or "v/..."
-        // these signify leaf of tree branch, is not a topic with children
+        // eg. if begins with "e/..." or "a/..." or "v/..." are leaves of topic tree
         // a = article, e = excercise, v = video
-        // log.info(val);
         const tmp = val.split('/');
         if (tmp[0] === 'v') { // only output videos to array
           // returns an array of objects
@@ -68,7 +62,7 @@ const kaTopicTree = (logger, nested) => {
         // flatten any nested arrays as we go if nested===false
         return nested ? data : data.reduce((a, b) => a.concat(b), []);
       })
-      .catch((err) => log.error(err));
+      .catch(err => log.error(err));
   };
 
   return {

@@ -3,6 +3,8 @@
 /* Collects data from Khan Academy and Youtube APIs.
    Intended to be run once, with data being stored persistently
    (Is the only part of the app that deals with IO, data storage)
+
+   WARNING: will override existing data
 */
 
 // custom logger --> share one instance across all modules/files
@@ -30,6 +32,8 @@ const getTopics = rootTopic =>
     .then((contents) => {
       log.info('Loaded topics from file.');
       return JSON.parse(contents);
+
+      // log.info('Loaded data from db');
     }))
   .catch(err =>
     // if file doesn't exist, get from API
@@ -49,7 +53,7 @@ const addYoutubeID = (obj) => {
   }
   // shortcut if already have youtube id
   if (obj.youtubeid) {
-    return Promise.resolve(obj);
+    return obj;
   }
 
   return YD.getYoutubeID(obj.title)
@@ -67,7 +71,7 @@ const addVideoInfo = (obj) => {
   }
   // shortcut if already have video info
   if (obj.videoInfo) {
-    return Promise.resolve(obj);
+    return obj;
   }
 
   return YD.getVideoInfo(yid)
@@ -76,44 +80,44 @@ const addVideoInfo = (obj) => {
       return obj;
     });
 };
-const savedoc = (obj) => {
-  db.upsert(obj);
-  obj = undefined; // reset object, hopefully saving lots of memory => todo: profile
-  return Promise.resolve();
-}
+const savedoc = obj =>
+  db.upsert(obj)
+  .then(() => obj = null); // reset object, hopefully saving lots of memory => todo: profile
 
 let completed = 0;
 let numtopics = 0;
 // todo: use streams?
-const execute = (rootTopic) =>
+const execute = rootTopic =>
   getTopics(rootTopic) // 1. get topics
-  .tap(topics => {
+  .then(arr =>  // remove duplicates by field value equality (assumes not nested)
+    arr.filter((e, i) => arr.findIndex(e2 => e.title===e2.title) === i)
+    // is a generalized form of: arr.filter((val, index) => arr.indexOf(val) == index)
+  )
+  .tap((topics) => {
     numtopics = topics.length;
-    log.info(`${numtopics} topics.`)
+    log.info(`${numtopics} topics.`);
   })
-  .map(obj => {
-    return addYoutubeID(obj) // 2. get Youtube video ID of each video
-      .then(addVideoInfo) // 3. get Youtube video info of each video
-      .then(savedoc) // 4. save to db
-      .then(() => {
-        completed++;
-        if(completed%50===0)
-          log.info(`${Math.floor(completed/numtopics*100)}%`);
-      }); // progress indicator
-  }, {
-    concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
-  })
-  .then(() => log.info('Done.'))
-  .catch((err) => log.error(err));
+  .map(obj =>
+    addYoutubeID(obj) // 2. get Youtube video ID of each video
+    .then(addVideoInfo) // 3. get Youtube video info of each video
+    .then(savedoc) // 4. save to db
+    .tap(() => { // progress indicator
+      completed += 1;
+      if (completed % 50 === 0) { log.info(`${Math.floor(100 * completed / numtopics)}%`); }
+    }), {
+      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
+    })
+  .then(arr => log.info('Done'))
+  .catch(err => log.error(err));
 
-
-// the entire topic tree is 30mb :(
+// the entire topic tree is 74MB :(
 // start with a root (proof of concept)
 db.connect()
-  .then(() => {
-    execute('cells');
-  });
+  .then(() => execute('world-history'))
+  .then(db.close) // if omitted, process never ends. If done, then exits with null error.
+  .catch(err => log.error(err));
 
 // global-art-architecture: 19 videos
 // cells: 61 videos
+// world-history: 208 topics
 // humanities: 2465 videos
