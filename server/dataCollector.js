@@ -53,7 +53,7 @@ const addYoutubeID = (obj) => {
   }
   // shortcut if already have youtube id
   if (obj.youtubeid) {
-    return Promise.resolve(obj);
+    return obj;
   }
 
   return YD.getYoutubeID(obj.title)
@@ -71,7 +71,7 @@ const addVideoInfo = (obj) => {
   }
   // shortcut if already have video info
   if (obj.videoInfo) {
-    return Promise.resolve(obj);
+    return obj;
   }
 
   return YD.getVideoInfo(yid)
@@ -93,23 +93,21 @@ const execute = (rootTopic) =>
     numtopics = topics.length;
     log.info(`${numtopics} topics.`)
   })
-  .map(obj => {
-    return addYoutubeID(obj) // 2. get Youtube video ID of each video
-      .then(addVideoInfo) // 3. get Youtube video info of each video
-      .then(savedoc) // 4. save to db
-      .then(() => { // progress indicator
-        completed++;
-        if (completed % 50 === 0)
-          log.info(`${Math.floor(completed/numtopics*100)}%`);
-        return Promise.resolve();
-      })
-  }, {
-    concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
-  })
+  .map(obj =>
+    addYoutubeID(obj) // 2. get Youtube video ID of each video
+    .then(addVideoInfo) // 3. get Youtube video info of each video
+    .then(savedoc) // 4. save to db
+    .tap(() => { // progress indicator
+      completed++;
+      if (completed % 50 === 0)
+        log.info(`${Math.floor(completed/numtopics*100)}%`);
+    }), {
+      concurrency: 20, // 20 max concurrent to prevent ECONNRESET and ETIMEDOUT
+    })
   .then((arr) => log.info('Done'))
   .catch(log.error);
 
-// the entire topic tree is 30mb :(
+// the entire topic tree is 74MB :(
 // start with a root (proof of concept)
 db.connect()
   .then(() => execute('world-history'))
