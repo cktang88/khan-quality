@@ -39,6 +39,7 @@ const getTopics = rootTopic =>
     // if file doesn't exist, get from API
     kaTopicTree.getFromAPI(rootTopic)
     .then((results) => {
+      log.info('Writing topics to file...')
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written topics to file.');
       return results;
@@ -89,13 +90,14 @@ let numtopics = 0;
 // todo: use streams?
 const execute = rootTopic =>
   getTopics(rootTopic) // 1. get topics
-  .then(arr =>  // remove duplicates by field value equality (assumes not nested)
-    arr.filter((e, i) => arr.findIndex(e2 => e.title===e2.title) === i)
+  .then(arr =>  {// remove duplicates by field value equality (assumes not nested)
+    log.info(`${arr.length} topics.`);
+    return arr.filter((e, i) => arr.findIndex(e2 => e.title===e2.title) === i)
     // is a generalized form of: arr.filter((val, index) => arr.indexOf(val) == index)
-  )
+  })
   .tap((topics) => {
     numtopics = topics.length;
-    log.info(`${numtopics} topics.`);
+    log.info(`${numtopics} unique topics.`);
   })
   .map(obj =>
     addYoutubeID(obj) // 2. get Youtube video ID of each video
@@ -113,11 +115,11 @@ const execute = rootTopic =>
 // the entire topic tree is 74MB :(
 // start with a root (proof of concept)
 db.connect()
-  .then(() => execute('world-history'))
+  .then(() => execute('root'))
   .then(db.close) // if omitted, process never ends. If done, then exits with null error.
   .catch(err => log.error(err));
 
 // global-art-architecture: 19 videos
-// cells: 61 videos
-// world-history: 208 topics
+// cells: 61 videos -> 61 without duplicates
+// world-history: 208 topics -> 197 without duplicates
 // humanities: 2465 videos
