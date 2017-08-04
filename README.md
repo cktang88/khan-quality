@@ -4,9 +4,9 @@ An app to find videos that need attention in Khan Academy.
 
 ## Motivation
 
-When using Khan Academy one day, I found several videos had low resolution, suboptimal sound quality, or many similar critical comments in "Tips & Thanks" that were unanswered. This correlated with videos that needed updating. I decided to make this to hopefully find all such videos automatically and highlight them.
+When using Khan Academy one day, I found several videos had low resolution, suboptimal sound quality, or several similar critical comments in "Tips & Thanks" that were unanswered. This often correlated with videos that needed updating. I created this project to hopefully find all such videos automatically and highlight them for further attention.
 
-Note: I highly admire Khan Academy, and this app is made to be helpful, not critical.
+Note: I'm a huge fan of Khan Academy, and this app is made to be helpful, not critical.
 
 ## Challenges
 
@@ -23,6 +23,21 @@ Note: I highly admire Khan Academy, and this app is made to be helpful, not crit
 
 
 ## Dev
+```
+$ git clone https://github.com/cktang88/khan-quality
+$ cd khan-quality
+$ npm i --dev
+
+# create a config.env(containing db vars) and Procfile for running on Heroku locally
+
+# 1. collecting data: 
+# put 'worker: npm run collectData' in Procfile
+$ heroku local -e config.env
+
+# 2. analyzing data:
+# put 'worker: npm run analyze' in Procfile
+$ heroku local -e config.env
+```
 Code linting with [AirBnB's style guide](https://github.com/airbnb/javascript):
 ```
 $ npm run lint
