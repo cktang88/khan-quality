@@ -17,6 +17,9 @@ Note: I'm a huge fan of Khan Academy, and this app is made to be helpful, not cr
 2. Mongo DB incorrect count of videos compared to topic list
     * Solution: originally had not closed db correctly. Fixed, but problem persists. Realized some identical videos are listed under multiple topics.
 
+## What I've learned
+Khan Academy grows at a staggering pace. When I originally retrieved the topic tree in July 15th, 2017, there were three or four videos with broken links, and had 17997 videos, 9563 of which were unique. As of August 4, 2017, there are 18374 videos, 9599 of which are unique. In addition, only one of video was found to have a broken link, a significant improvement.
+
 ## Misc.
 
 - MapDB to analyze data? or hadoop/mapreduce/spark
