@@ -7,22 +7,19 @@ const db = require('./dbManager.js')(log);
 
 db.connect()
   .then(() => {
-    let query = {
-      $where: function(){ // $where is not available for node.js mongo...
-        log.info(this.videoInfo.statistics.viewCount);
-        return false;
-        return Number(this.videoInfo.statistics.viewCount) > 1000000;
-      }
+    const query = {
+      'this.videoInfo.statistics.viewCount': {
+        $gt: 100000,
+      },
     };
+
+
     // look into sorting - http://mongodb.github.io/node-mongodb-native/markdown-docs/queries.html#sorting
-    let arr = db.find(query);
+    const arr = db.find(query);
     log.info(arr);
 
     arr.each((err, doc) => {
-      if (doc)
-        log.info(doc.title);
-      else
-        log.info(doc);
+      if (doc) { log.info(doc.title); } else { log.info(doc); }
     });
 
     log.info('hello');

@@ -39,7 +39,7 @@ const getTopics = rootTopic =>
     // if file doesn't exist, get from API
     kaTopicTree.getFromAPI(rootTopic)
     .then((results) => {
-      log.info('Writing topics to file...')
+      log.info('Writing topics to file...');
       writeFile(topicsFilePath, JSON.stringify(results)); // write to file
       log.info('Written topics to file.');
       return results;
@@ -90,9 +90,9 @@ let numtopics = 0;
 // todo: use streams?
 const execute = rootTopic =>
   getTopics(rootTopic) // 1. get topics
-  .then(arr =>  {// remove duplicates by field value equality (assumes not nested)
+  .then((arr) => { // remove duplicates by field value equality (assumes not nested)
     log.info(`${arr.length} topics.`);
-    return arr.filter((e, i) => arr.findIndex(e2 => e.title===e2.title) === i)
+    return arr.filter((e, i) => arr.findIndex(e2 => e.title === e2.title) === i);
     // is a generalized form of: arr.filter((val, index) => arr.indexOf(val) == index)
   })
   .tap((topics) => {
@@ -121,5 +121,7 @@ db.connect()
 
 // global-art-architecture: 19 videos
 // cells: 61 videos -> 61 without duplicates
-// world-history: 208 topics -> 197 without duplicates
+// world-history: 208 videos -> 197 without duplicates
 // humanities: 2465 videos
+// root: 17997 videos -> 9563 uniques, 2 min to get tree, 11 min to get Youtube data. (7/15/2017)
+// root: 18374 videos, 9599 uniques (8/4/2017)

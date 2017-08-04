@@ -44,7 +44,7 @@ const kaTopicTree = (logger, nested) => {
       // default
       return undefined;
     }, {
-      concurrency: 5
+      concurrency: 5,
     })
     .filter(item => item !== undefined);
 

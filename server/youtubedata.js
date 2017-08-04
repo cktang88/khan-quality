@@ -8,10 +8,11 @@ const kq = require('./khanquality.js')(loggerInstance);
 
 'use strict';
 
+const rp = require('request-promise');
+// NTOE: assert funcs don't work w/ promises, which never throw...
+const Promise = require('bluebird');
+
 const youtubeData = (logger) => {
-  const rp = require('request-promise');
-  // NTOE: assert funcs don't work w/ promises, which never throw...
-  const Promise = require('bluebird');
   const log = logger;
 
   const options = {
@@ -60,19 +61,19 @@ const youtubeData = (logger) => {
         // make data more suitable for analysis by converting to numbers
         // allows fast & easy querying via built-in operators
         if (snip.publishedAt) {
-          let date = snip.publishedAt.split('-');
-          let tmp = date[2].split('T');
+          const date = snip.publishedAt.split('-');
+          const tmp = date[2].split('T');
           snip.publishedAt = {
-            "year": Number(date[0]),
-            "month": Number(date[1]),
-            "day": Number(tmp[0]),
-            "time": tmp[1],
-          }
+            year: Number(date[0]),
+            month: Number(date[1]),
+            day: Number(tmp[0]),
+            time: tmp[1],
+          };
         }
         // convert all stats to numbers
         const stats = data.statistics;
-        if(stats){
-          for(let i in stats){
+        if (stats) {
+          for (const i in stats) {
             stats[i] = Number(stats[i]);
           }
         }

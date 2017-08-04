@@ -69,10 +69,12 @@ const urlencodedParser = bodyParser.urlencoded({
 app.post('/login', urlencodedParser, (req, res) => {
   if (!req.body) return res.sendStatus(400);
   res.send(`welcome, ${req.body.username}`);
+  return '';
 });
 
 // POST /api/users gets JSON bodies
 app.post('/api/users', jsonParser, (req, res) => {
   if (!req.body) return res.sendStatus(400);
   // create user in req.body
+  return '';
 });
