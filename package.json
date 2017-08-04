@@ -2,14 +2,13 @@
   "name": "khan-quality",
   "version": "1.2.0",
   "description": "An app to find videos that need attention in Khan Academy",
-  "main": "server.js",
   "scripts": {
-    "start": "node ./server/dataCollector.js",
     "analyze": "node ./server/analyze.js",
+    "collectData": "node ./server/dataCollector.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --fix **/*.js"
   },
-  "author": "",
+  "author": "cktang88",
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.5.0",
