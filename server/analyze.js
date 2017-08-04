@@ -8,11 +8,10 @@ const db = require('./dbManager.js')(log);
 db.connect()
   .then(() => {
     const query = {
-      'this.videoInfo.statistics.viewCount': {
-        $gt: 100000,
+      'videoInfo.statistics.viewCount': {
+        $gt: 5000000,
       },
     };
-
 
     // look into sorting - http://mongodb.github.io/node-mongodb-native/markdown-docs/queries.html#sorting
     const arr = db.find(query);
