@@ -46,7 +46,7 @@ const youtubeData = (logger) => {
         const data = rawdata.items[0];
         if (!data) {
           // indicates the video is no longer available for viewing
-          log.info(`No video data available for ${obj.title}`);
+          log.info(`No video data available for videoID=${videoID}`);
           return data;
         }
         // remove unnecessary data to reduce file size & process memory usage
@@ -56,6 +56,26 @@ const youtubeData = (logger) => {
         snip.description = 'omit';
         snip.thumbnails = 'omit';
         snip.localized.description = 'omit';
+
+        // make data more suitable for analysis by converting to numbers
+        // allows fast & easy querying via built-in operators
+        if (snip.publishedAt) {
+          let date = snip.publishedAt.split('-');
+          let tmp = date[2].split('T');
+          snip.publishedAt = {
+            "year": Number(date[0]),
+            "month": Number(date[1]),
+            "day": Number(tmp[0]),
+            "time": tmp[1],
+          }
+        }
+        // convert all stats to numbers
+        const stats = data.statistics;
+        if(stats){
+          for(let i in stats){
+            stats[i] = Number(stats[i]);
+          }
+        }
         return data;
       })
       .catch((err) => {
