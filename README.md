@@ -1,5 +1,7 @@
 # Khan-Quality
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/cktang88/khan-quality.svg)](https://greenkeeper.io/)
+
 An app to find videos that need attention in Khan Academy.
 
 ## Motivation
