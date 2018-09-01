@@ -12,13 +12,14 @@ db.connect()
         $gt: 5000000,
       },
     };
+    // aggregate queries.... (with early filtering)
 
     // look into sorting - http://mongodb.github.io/node-mongodb-native/markdown-docs/queries.html#sorting
     const arr = db.find(query);
     log.info(arr);
 
     arr.each((err, doc) => {
-      if (doc) { log.info(doc.title); } else { log.info(doc); }
+      if (doc) { log.info(doc.title, doc.statistics, docs.youtubeid); } else { log.info(doc); }
     });
 
     log.info('hello');

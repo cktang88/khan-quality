@@ -10,6 +10,7 @@ const dbManager = (logger) => {
   let db = null;
   let collection = null;
 
+  // connect to db, returns collection
   const connect = () =>
     require('mongodb').MongoClient.connect(url, {
       poolSize: 20,
@@ -23,34 +24,43 @@ const dbManager = (logger) => {
       collection = db.collection('khan-info');
     }).catch(err => log.error(err));
 
+  const find = (query) => {
+    const cursor = collection.find(query);
+    cursor.count((err, count) => {
+      console.log(`Total matches: ${count}`);
+    });
+    return cursor;
+  };
+
   const upsert = doc =>
     // Update the document using an UPSERT operation, ensuring creation if it does not exist
     // does not change "_id" value
-     collection.updateOne({
-       title: doc.title,
-       youtubeid: doc.youtubeid,
-     }, doc, {
-       upsert: true,
-     })
-      .then(res =>
-        // if(res.matchedCount!==1 || res.modifiedCount!==1)
-        // return Promise.reject(`${res.matchedCount} matched, ${res.modifiedCount} modified`);
-        log.debug(`Inserted ${doc.title}`),
-      );
-    // note use {$set: ...} to set just one field
+    collection.updateOne({
+      title: doc.title,
+      youtubeid: doc.youtubeid,
+    }, doc, {
+      upsert: true,
+    })
+    .then(res =>
+      // if(res.matchedCount!==1 || res.modifiedCount!==1)
+      // return Promise.reject(`${res.matchedCount} matched, ${res.modifiedCount} modified`);
+      log.debug(`Inserted ${doc.title}`),
+    );
+  // note use {$set: ...} to set just one field
 
 
   // be sure to close
   // https://docs.mongodb.com/manual/reference/method/db.collection.stats/#accuracy-after-unexpected-shutdown
   // can run validate() to verify correct stats
   const close = () => db.close()
-    .then((result) => {
-      log.info(`DB closed successfully. ${result}`);
+    .then(() => {
+      log.info('DB closed successfully.');
     });
 
   return {
     close,
     connect,
+    find,
     upsert,
   };
 };
